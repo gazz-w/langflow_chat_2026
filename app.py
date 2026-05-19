@@ -26,7 +26,8 @@ def extract_reply(payload: dict) -> str:
     return message["text"]
 
 
-LEADS_FILE = os.path.join(os.path.dirname(__file__), "leads.jsonl")
+DATA_DIR = os.environ.get("DATA_DIR", os.path.dirname(__file__))
+LEADS_FILE = os.path.join(DATA_DIR, "leads.jsonl")
 CONSENT_VERSION = "2026-05-18.v1"
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 

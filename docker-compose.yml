@@ -1,0 +1,45 @@
+services:
+  langflow:
+    image: langflowai/langflow:latest
+    volumes:
+      - langflow_data:/root/.cache/langflow
+    environment:
+      - LANGFLOW_AUTO_LOGIN=true
+    restart: unless-stopped
+    networks:
+      - internal
+
+  flask:
+    build: .
+    env_file: .env
+    environment:
+      DATA_DIR: /data
+    volumes:
+      - leads_data:/data
+    depends_on:
+      - langflow
+    restart: unless-stopped
+    networks:
+      - internal
+
+  caddy:
+    image: caddy:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+    networks:
+      - internal
+
+networks:
+  internal:
+
+volumes:
+  langflow_data:
+  leads_data:
+  caddy_data:
+  caddy_config:

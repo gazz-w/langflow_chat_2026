@@ -1,0 +1,21 @@
+# ─────────────────────────────────────────────
+# Substitua "seudominio.com" pelo seu domínio.
+# Se ainda não tiver domínio, troque por :80
+# e comente/remova a linha tls.
+# ─────────────────────────────────────────────
+
+seudominio.com {
+    reverse_proxy flask:5000
+}
+
+# Acesso à UI do Langflow (gestão do fluxo).
+# Protegido por senha — gere o hash com:
+#   docker run --rm caddy:alpine caddy hash-password
+# Descomente quando tiver o domínio configurado.
+#
+# langflow.seudominio.com {
+#     basicauth {
+#         admin HASH_GERADO_AQUI
+#     }
+#     reverse_proxy langflow:7860
+# }

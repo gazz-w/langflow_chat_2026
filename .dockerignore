@@ -1,0 +1,11 @@
+.env
+leads.jsonl
+__pycache__/
+*.pyc
+venv/
+.venv/
+.git/
+.gitignore
+docker-compose.yml
+Caddyfile
+*.md
