@@ -1,0 +1,6 @@
+.env
+leads.jsonl
+__pycache__/
+*.pyc
+venv/
+.venv/

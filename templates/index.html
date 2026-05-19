@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ananda · Assistente de Intercâmbio</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-avatar">A</div>
+        <div class="brand-text">
+          <strong>Assistente da Ananda</strong>
+          <span>Intercâmbio &amp; vida fora do Brasil</span>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button id="theme-toggle" class="icon-btn" type="button" aria-label="Alternar tema"
+          title="Alternar tema claro/escuro">
+          <svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" fill="currentColor" />
+          </svg>
+          <svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5L4 4M19 5l1-1M5 19l-1 1M19 19l1 1" />
+            </g>
+          </svg>
+        </button>
+        <button id="new-chat" class="new-chat" type="button">+ Nova conversa</button>
+      </div>
+    </header>
+
+    <div id="rates" class="strip rates" aria-live="polite">
+      <span class="strip-title">Cotação</span>
+      <span class="rate"><b>USD</b> <span id="usd">—</span></span>
+      <span class="rate"><b>EUR</b> <span id="eur">—</span></span>
+    </div>
+
+    <div id="converter" class="strip converter">
+      <span class="strip-title">Conversor</span>
+      <div class="conv-row">
+        <input id="conv-amount" class="conv-input" type="text" inputmode="decimal" value="1" autocomplete="off"
+          aria-label="Valor">
+        <select id="conv-from" class="conv-select" aria-label="De">
+          <option value="EUR" selected>EUR</option>
+          <option value="USD">USD</option>
+          <option value="GBP">GBP</option>
+          <option value="BRL">BRL</option>
+        </select>
+        <span class="conv-arrow">→</span>
+        <strong id="conv-result" class="conv-result">—</strong>
+        <select id="conv-to" class="conv-select" aria-label="Para">
+          <option value="BRL" selected>BRL</option>
+          <option value="USD">USD</option>
+          <option value="EUR">EUR</option>
+          <option value="GBP">GBP</option>
+        </select>
+      </div>
+    </div>
+
+    <main id="scroll" class="scroll">
+      <section id="welcome" class="welcome">
+        <div class="welcome-avatar">A</div>
+        <h1>Olá! Eu sou a assistente da Ananda 👋</h1>
+        <p>Tire suas dúvidas sobre intercâmbio, vistos, países e como dar o primeiro passo.</p>
+        <div class="suggestions">
+          <button class="chip" type="button">Como faço para fazer um intercâmbio?</button>
+          <button class="chip" type="button">Quanto custa fazer intercâmbio?</button>
+          <button class="chip" type="button">Quais países são melhores para intercâmbio?</button>
+          <button class="chip" type="button">Quais países consigo trabalhar?</button>
+        </div>
+      </section>
+
+      <div id="thread" class="thread"></div>
+    </main>
+
+    <footer class="composer-wrap">
+      <form id="chat-form" class="composer">
+        <textarea id="input" rows="1" placeholder="Pergunte alguma coisa..." autocomplete="off"></textarea>
+        <button id="send" type="submit" aria-label="Enviar" title="Enviar">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <path d="M4 12l16-8-6 8 6 8z" fill="currentColor" />
+          </svg>
+        </button>
+      </form>
+      <p class="disclaimer">A assistente pode cometer erros. Sempre confirme as informações oficiais de imigração de
+        cada país.</p>
+    </footer>
+  </div>
+
+  <div id="gate" class="gate">
+    <div class="gate-card" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+      <div class="gate-avatar">A</div>
+      <h2 id="gate-title">Antes de começar</h2>
+      <p class="gate-sub">Faça um cadastro rápido para usar a assistente da Ananda.</p>
+
+      <form id="gate-form" class="gate-form" novalidate>
+        <label class="field">
+          <span>Nome</span>
+          <input id="reg-name" type="text" autocomplete="name" required>
+        </label>
+        <label class="field">
+          <span>Telefone (com DDD)</span>
+          <input id="reg-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(61) 99999-9999" required>
+        </label>
+        <label class="field">
+          <span>E-mail</span>
+          <input id="reg-email" type="email" inputmode="email" autocomplete="email" required>
+        </label>
+
+        <label class="check">
+          <input id="reg-community" type="checkbox">
+          <span>Quero fazer parte de uma comunidade de pessoas que também desejam fazer intercâmbio.</span>
+        </label>
+        <label class="check">
+          <input id="reg-share" type="checkbox">
+          <span>Autorizo o compartilhamento do meu e-mail e telefone com agências de intercâmbio parceiras, para fins de
+            contato comercial.</span>
+        </label>
+
+        <p class="gate-privacy">
+          Seus dados (nome, telefone e e-mail) serão usados para contato sobre este projeto.
+          As duas opções acima são <b>opcionais</b> e podem ser revogadas a qualquer momento
+          pelo e-mail <a href="mailto:gabrielshimabuko01@gmail.com">gabrielshimabuko01@gmail.com</a>.
+          Ao continuar, você declara ter 18 anos ou mais (ou consentimento do responsável)
+          e concordar com o uso dos dados conforme descrito (LGPD).
+        </p>
+
+        <div id="gate-error" class="gate-error" hidden></div>
+        <button id="gate-submit" type="submit" class="gate-btn">Acessar a assistente</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='chat.js') }}"></script>
+</body>
+
+</html>
