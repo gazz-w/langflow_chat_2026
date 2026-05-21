@@ -6,7 +6,7 @@ const {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   Header, Footer, AlignmentType, LevelFormat, ExternalHyperlink,
   HeadingLevel, BorderStyle, WidthType, ShadingType, PageBreak,
-  PageNumber, TabStopType, TabStopPosition
+  PageNumber, TabStopType, TabStopPosition, ImageRun
 } = require('docx');
 
 // ──────── Helpers ────────
@@ -182,28 +182,25 @@ const arquitetura = [
   p("A aplicação foi desenhada em três camadas independentes, comunicando-se via rede interna do Docker. Esta separação garante segurança (apenas o Caddy é exposto à internet), escalabilidade (cada serviço pode ser substituído individualmente) e portabilidade (todo o stack roda em qualquer servidor com Docker)."),
   h3("Diagrama de componentes"),
   new Paragraph({
-    spacing: { before: 100, after: 200 },
-    shading: { type: ShadingType.CLEAR, fill: "F5F5F5" },
-    children: [new TextRun({ text:
-      "Internet (HTTPS)\n" +
-      "      ↓\n" +
-      "┌──────────────────────────────────────┐\n" +
-      "│  Caddy (porta 443/80)                │  ← Proxy reverso + TLS\n" +
-      "│  + Let's Encrypt auto-renovável      │\n" +
-      "└──────────────────────────────────────┘\n" +
-      "      ↓ (rede interna)\n" +
-      "┌──────────────────────────────────────┐\n" +
-      "│  Flask + Gunicorn (porta 5000)       │  ← Aplicação web\n" +
-      "│  • Serve UI estática                 │\n" +
-      "│  • Endpoints /chat /register /rates  │\n" +
-      "└──────────────────────────────────────┘\n" +
-      "      ↓ (rede interna)\n" +
-      "┌──────────────────────────────────────┐\n" +
-      "│  Langflow (porta 7860)               │  ← Motor de IA\n" +
-      "│  • Agent Claude Haiku 4.5            │\n" +
-      "│  • Memória por sessão isolada        │\n" +
-      "└──────────────────────────────────────┘",
-      font: "Consolas", size: 18,
+    alignment: AlignmentType.CENTER,
+    spacing: { before: 100, after: 100 },
+    children: [new ImageRun({
+      type: "png",
+      data: fs.readFileSync(path.join(__dirname, "diagrama_arquitetura.png")),
+      transformation: { width: 460, height: 540 },
+      altText: {
+        title: "Arquitetura de componentes",
+        description: "Diagrama mostrando as três camadas: Caddy (borda), Flask (aplicação) e Langflow (inteligência)",
+        name: "diagrama_arquitetura",
+      },
+    })],
+  }),
+  new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: { after: 200 },
+    children: [new TextRun({
+      text: "Figura 1 — Arquitetura de componentes em três camadas (borda, aplicação, inteligência).",
+      italics: true, size: 18, color: "6B6B75",
     })],
   }),
   h2("2.2. Decisões Arquiteturais"),
