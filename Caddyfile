@@ -2,14 +2,15 @@ viajandocomananda.com, www.viajandocomananda.com {
     reverse_proxy flask:5000
 }
 
-# Acesso à UI do Langflow (gestão do fluxo) — opcional.
-# Para habilitar: descomente, gere uma senha com:
-#   docker run --rm caddy:alpine caddy hash-password
-# e crie um A record para langflow.viajandocomananda.com → 91.99.24.48
-#
-# langflow.viajandocomananda.com {
-#     basicauth {
-#         admin HASH_GERADO_AQUI
-#     }
-#     reverse_proxy langflow:7860
-# }
+# Acesso à UI do Langflow (gestão do fluxo) — protegido por senha.
+# O hash bcrypt é lido da variável LANGFLOW_PASS_HASH no .env.
+# Para gerar um novo hash:
+#   docker run --rm caddy:alpine caddy hash-password --plaintext 'sua-senha'
+# Ao salvar no .env, dobre cada $ (ex: $2a$14$... vira $$2a$$14$$...)
+# para escapar a interpolação do Docker Compose.
+langflow.viajandocomananda.com {
+    basic_auth {
+        admin {env.LANGFLOW_PASS_HASH}
+    }
+    reverse_proxy langflow:7860
+}
