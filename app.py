@@ -398,7 +398,7 @@ def admin_export():
     filename = f"leads_{datetime.now(_BRT).strftime('%Y-%m-%d')}.csv"
     return Response(
         buf.getvalue(),
-        mimetype="text/csv; charset=utf-8",
+        mimetype="text/csv",
         headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
 
