@@ -13,6 +13,14 @@ function newSessionId() {
 let sessionId = localStorage.getItem("ananda_session") || newSessionId();
 localStorage.setItem("ananda_session", sessionId);
 
+// user_id: identidade permanente da pessoa — NÃO muda em "Nova conversa".
+// É o que vincula todas as sessões de um mesmo usuário ao seu cadastro.
+let userId = localStorage.getItem("ananda_user_id");
+if (!userId) {
+  userId = "usr-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  localStorage.setItem("ananda_user_id", userId);
+}
+
 function autosize() {
   input.style.height = "auto";
   input.style.height = Math.min(input.scrollHeight, 200) + "px";
@@ -83,7 +91,11 @@ async function send(text) {
     const res = await fetch("/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text, session_id: sessionId }),
+      body: JSON.stringify({
+        message: text,
+        session_id: sessionId,
+        user_id: userId,
+      }),
     });
     const data = await res.json();
     typing.remove();
@@ -269,6 +281,7 @@ gateForm.addEventListener("submit", async (e) => {
         phone,
         email,
         session_id: sessionId,
+        user_id: userId,
         consent_community: document.getElementById("reg-community").checked,
         consent_share_agencies: document.getElementById("reg-share").checked,
       }),

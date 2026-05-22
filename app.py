@@ -88,8 +88,54 @@ def extract_reply(payload: dict) -> str:
 
 DATA_DIR = os.environ.get("DATA_DIR", os.path.dirname(__file__))
 LEADS_FILE = os.path.join(DATA_DIR, "leads.jsonl")
+SESSIONS_FILE = os.path.join(DATA_DIR, "sessions.jsonl")
 CONSENT_VERSION = "2026-05-18.v1"
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+# Cache por worker dos pares (user_id, session_id) já gravados — evita
+# reescrever a mesma linha a cada mensagem. A garantia real de unicidade
+# é a deduplicação na leitura (sessions_for_user).
+_seen_sessions = set()
+
+
+def record_session(user_id: str, session_id: str) -> None:
+    """Registra o vínculo user_id <-> session_id (uma vez por par)."""
+    pair = (user_id, session_id)
+    if pair in _seen_sessions:
+        return
+    _seen_sessions.add(pair)
+    entry = {
+        "user_id": user_id,
+        "session_id": session_id,
+        "ts": datetime.now(timezone.utc).isoformat(),
+    }
+    try:
+        with open(SESSIONS_FILE, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except OSError:
+        pass
+
+
+def sessions_for_user(user_id: str) -> list:
+    """Sessões distintas de um usuário, da mais antiga para a mais recente."""
+    seen, ordered = set(), []
+    try:
+        with open(SESSIONS_FILE, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                except ValueError:
+                    continue
+                sid = entry.get("session_id")
+                if entry.get("user_id") == user_id and sid and sid not in seen:
+                    seen.add(sid)
+                    ordered.append({"session_id": sid, "ts": entry.get("ts", "")})
+    except OSError:
+        pass
+    return ordered
 
 
 @app.route("/")
@@ -118,6 +164,7 @@ def register():
         "phone": phone,
         "email": email,
         "session_id": (body.get("session_id") or "").strip(),
+        "user_id": (body.get("user_id") or "").strip(),
         "consent_community": bool(body.get("consent_community")),
         "consent_share_agencies": bool(body.get("consent_share_agencies")),
         "consent_version": CONSENT_VERSION,
@@ -229,6 +276,7 @@ def chat():
     body = request.get_json(silent=True) or {}
     user_message = (body.get("message") or "").strip()
     session_id = (body.get("session_id") or "").strip()
+    user_id = (body.get("user_id") or "").strip()
 
     if not user_message:
         # Mensagem vazia não consome slot — é rejeitada de imediato.
@@ -236,6 +284,10 @@ def chat():
 
     # Requisição válida: consome um slot em cada janela.
     rate_limit_consume(ip)
+
+    # Vincula esta sessão ao usuário (para o histórico no painel admin).
+    if user_id and session_id:
+        record_session(user_id, session_id)
 
     langflow_payload = {
         "input_value": user_message,
@@ -403,11 +455,8 @@ def admin_export():
     )
 
 
-@app.route("/admin/session/<session_id>")
-def admin_session(session_id):
-    if not _admin_allowed():
-        return "Não encontrado", 404
-    messages, error = [], None
+def _fetch_messages(session_id: str):
+    """Busca as mensagens de uma sessão no Langflow. Retorna (mensagens, erro)."""
     try:
         resp = requests.get(
             f"{LANGFLOW_BASE_URL}/api/v1/monitor/messages",
@@ -418,14 +467,49 @@ def admin_session(session_id):
         resp.raise_for_status()
         messages = resp.json()
         messages.sort(key=lambda m: m.get("timestamp") or "")
+        return messages, None
     except requests.RequestException as exc:
-        error = f"Não foi possível carregar a conversa: {exc}"
+        return [], f"Não foi possível carregar a conversa: {exc}"
     except (ValueError, AttributeError):
-        error = "Resposta do Langflow em formato inesperado."
+        return [], "Resposta do Langflow em formato inesperado."
+
+
+@app.route("/admin/session/<session_id>")
+def admin_session(session_id):
+    if not _admin_allowed():
+        return "Não encontrado", 404
+    messages, error = _fetch_messages(session_id)
     return render_template(
         "admin_session.html",
         session_id=session_id,
         messages=messages,
+        error=error,
+    )
+
+
+@app.route("/admin/user/<user_id>")
+def admin_user(user_id):
+    if not _admin_allowed():
+        return "Não encontrado", 404
+
+    lead = next((l for l in read_leads() if l.get("user_id") == user_id), None)
+
+    conversations, error = [], None
+    for sess in sessions_for_user(user_id):
+        messages, err = _fetch_messages(sess["session_id"])
+        if err and not error:
+            error = err
+        conversations.append({
+            "session_id": sess["session_id"],
+            "ts": _fmt_ts(sess.get("ts", "")),
+            "messages": messages,
+        })
+
+    return render_template(
+        "admin_user.html",
+        user_id=user_id,
+        lead=lead,
+        conversations=conversations,
         error=error,
     )
 

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Painel · Conversas</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: #1b1b1d;
+      color: #ececec;
+      padding: 28px 20px;
+      line-height: 1.55;
+    }
+    .wrap { max-width: 800px; margin: 0 auto; }
+    .back { color: #8b6df0; font-size: 14px; text-decoration: none; }
+    h1 { font-size: 20px; margin: 12px 0 4px; }
+    .uid {
+      font-family: monospace;
+      font-size: 12px;
+      color: #9a9aa3;
+      word-break: break-all;
+      display: block;
+      margin-bottom: 24px;
+    }
+    .session {
+      border: 1px solid #38383c;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    .session-head {
+      font-size: 12px;
+      color: #9a9aa3;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #38383c;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .session-head .sid { font-family: monospace; opacity: .7; }
+    .msg { margin-bottom: 14px; }
+    .msg:last-child { margin-bottom: 0; }
+    .meta {
+      font-size: 11px;
+      color: #9a9aa3;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .bubble {
+      padding: 9px 13px;
+      border-radius: 10px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font-size: 14px;
+    }
+    .msg.user .bubble { background: #2d2748; }
+    .msg.bot .bubble { background: #2a2a2d; border: 1px solid #38383c; }
+    .error {
+      background: rgba(229, 72, 77, .12);
+      color: #e5484d;
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+    .empty { color: #9a9aa3; padding: 36px 0; text-align: center; }
+    .empty-small { color: #9a9aa3; font-size: 13px; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <a class="back" href="/admin">← voltar aos cadastros</a>
+    <h1>Conversas{% if lead %} — {{ lead.name }}{% endif %}</h1>
+    <code class="uid">{{ user_id }}</code>
+
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+    {% if not conversations %}
+    <p class="empty">Nenhuma conversa registrada para este usuário.</p>
+    {% else %}
+    {% for conv in conversations %}
+    <section class="session">
+      <div class="session-head">
+        <span>Sessão · {{ conv.ts }}</span>
+        <span class="sid">{{ conv.session_id }}</span>
+      </div>
+      {% if not conv.messages %}
+      <p class="empty-small">Sem mensagens nesta sessão.</p>
+      {% else %}
+      {% for msg in conv.messages %}
+      <div class="msg {{ 'user' if msg.sender == 'User' else 'bot' }}">
+        <div class="meta">{{ msg.sender_name or msg.sender }} · {{ msg.timestamp }}</div>
+        <div class="bubble">{{ msg.text }}</div>
+      </div>
+      {% endfor %}
+      {% endif %}
+    </section>
+    {% endfor %}
+    {% endif %}
+  </div>
+</body>
+
+</html>

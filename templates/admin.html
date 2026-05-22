@@ -147,7 +147,9 @@
               {% else %}<span class="badge no">não</span>{% endif %}
             </td>
             <td>
-              {% if lead.session_id %}
+              {% if lead.user_id %}
+              <a href="/admin/user/{{ lead.user_id }}">ver conversas</a>
+              {% elif lead.session_id %}
               <a href="/admin/session/{{ lead.session_id }}">ver conversa</a>
               {% else %}<span class="muted">—</span>{% endif %}
             </td>
