@@ -87,6 +87,7 @@ async function send(text) {
     });
     const data = await res.json();
     typing.remove();
+    if (data.usage) renderUsage(data.usage);
     if (data.reply) {
       addMessage(data.reply, "bot");
     } else {
@@ -157,6 +158,33 @@ async function loadRates() {
 }
 loadRates();
 setInterval(loadRates, 600000);
+
+// Contador de requisições (limite de uso por IP)
+const usageMeter = document.getElementById("usage-meter");
+const usageHour = document.getElementById("usage-hour");
+const usageDay = document.getElementById("usage-day");
+
+function renderUsage(usage) {
+  if (!usage || !usage.hour || !usage.day) return;
+  const h = usage.hour.remaining;
+  const d = usage.day.remaining;
+  usageHour.textContent = h;
+  usageDay.textContent = d;
+  const empty = h <= 0 || d <= 0;
+  const low = !empty && (h <= 5 || d <= 10);
+  usageMeter.classList.toggle("usage-empty", empty);
+  usageMeter.classList.toggle("usage-low", low);
+}
+
+async function loadUsage() {
+  try {
+    const res = await fetch("/usage");
+    renderUsage(await res.json());
+  } catch (e) {
+    /* mantém o traço se falhar */
+  }
+}
+loadUsage();
 
 // Conversor de moedas
 const convAmount = document.getElementById("conv-amount");

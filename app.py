@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 import requests
 from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request
+from limits import RateLimitItemPerDay, RateLimitItemPerHour, storage, strategies
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
@@ -18,6 +20,62 @@ MEMORY_COMPONENT_ID = os.environ["MEMORY_COMPONENT_ID"]
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+
+# Atrás do Caddy (1 proxy). ProxyFix faz o request.remote_addr refletir
+# o IP real do cliente (header X-Forwarded-For) em vez do IP do container.
+# Se um dia ligar o proxy da Cloudflare (nuvem laranja), mudar x_for para 2.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
+
+# ── Rate limiting (controle de abuso por IP) ───────────────────────────
+# Storage compartilhado entre os workers do gunicorn. Em produção usa
+# Redis (RATELIMIT_STORAGE_URI); em dev cai para memória local.
+HOUR_MAX = 30
+DAY_MAX = 100
+_rate_storage = storage.storage_from_string(
+    os.environ.get("RATELIMIT_STORAGE_URI", "memory://")
+)
+_rate_strategy = strategies.FixedWindowRateLimiter(_rate_storage)
+_HOUR_LIMIT = RateLimitItemPerHour(HOUR_MAX)
+_DAY_LIMIT = RateLimitItemPerDay(DAY_MAX)
+
+
+def _client_ip() -> str:
+    return request.remote_addr or "desconhecido"
+
+
+def rate_limit_ok(ip: str) -> bool:
+    """Checa os dois limites SEM consumir. Falha aberta se o storage cair."""
+    try:
+        return _rate_strategy.test(_HOUR_LIMIT, "chat", ip) and _rate_strategy.test(
+            _DAY_LIMIT, "chat", ip
+        )
+    except Exception:
+        return True
+
+
+def rate_limit_consume(ip: str) -> None:
+    """Consome um slot em cada janela (hora e dia)."""
+    try:
+        _rate_strategy.hit(_HOUR_LIMIT, "chat", ip)
+        _rate_strategy.hit(_DAY_LIMIT, "chat", ip)
+    except Exception:
+        pass
+
+
+def usage_snapshot(ip: str) -> dict:
+    """Uso atual do IP, sem consumir. Falha aberta (mostra cheio)."""
+    try:
+        hour = _rate_strategy.get_window_stats(_HOUR_LIMIT, "chat", ip)
+        day = _rate_strategy.get_window_stats(_DAY_LIMIT, "chat", ip)
+        return {
+            "hour": {"remaining": hour.remaining, "limit": HOUR_MAX},
+            "day": {"remaining": day.remaining, "limit": DAY_MAX},
+        }
+    except Exception:
+        return {
+            "hour": {"remaining": HOUR_MAX, "limit": HOUR_MAX},
+            "day": {"remaining": DAY_MAX, "limit": DAY_MAX},
+        }
 
 
 def extract_reply(payload: dict) -> str:
@@ -143,14 +201,39 @@ def convert():
     return jsonify({"result": round(amount * rate, 2), "rate": rate})
 
 
+@app.route("/usage")
+def usage():
+    """Espia o consumo do IP sem gastar requisição. Usado pelo contador."""
+    return jsonify(usage_snapshot(_client_ip()))
+
+
 @app.route("/chat", methods=["POST"])
 def chat():
+    ip = _client_ip()
+
+    # Rejeita o abuso ANTES de gastar tokens com o Langflow.
+    if not rate_limit_ok(ip):
+        return (
+            jsonify(
+                {
+                    "error": "Você atingiu o limite de mensagens. "
+                    "Tente novamente mais tarde.",
+                    "usage": usage_snapshot(ip),
+                }
+            ),
+            429,
+        )
+
     body = request.get_json(silent=True) or {}
     user_message = (body.get("message") or "").strip()
     session_id = (body.get("session_id") or "").strip()
 
     if not user_message:
+        # Mensagem vazia não consome slot — é rejeitada de imediato.
         return jsonify({"error": "Mensagem vazia."}), 400
+
+    # Requisição válida: consome um slot em cada janela.
+    rate_limit_consume(ip)
 
     langflow_payload = {
         "input_value": user_message,
@@ -176,11 +259,27 @@ def chat():
         resp.raise_for_status()
         reply = extract_reply(resp.json())
     except requests.RequestException as exc:
-        return jsonify({"error": f"Falha ao falar com o Langflow: {exc}"}), 502
+        return (
+            jsonify(
+                {
+                    "error": f"Falha ao falar com o Langflow: {exc}",
+                    "usage": usage_snapshot(ip),
+                }
+            ),
+            502,
+        )
     except (KeyError, IndexError, ValueError):
-        return jsonify({"error": "Resposta do Langflow em formato inesperado."}), 502
+        return (
+            jsonify(
+                {
+                    "error": "Resposta do Langflow em formato inesperado.",
+                    "usage": usage_snapshot(ip),
+                }
+            ),
+            502,
+        )
 
-    return jsonify({"reply": reply})
+    return jsonify({"reply": reply, "usage": usage_snapshot(ip)})
 
 
 if __name__ == "__main__":

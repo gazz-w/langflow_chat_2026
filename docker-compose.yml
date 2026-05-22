@@ -9,15 +9,26 @@ services:
     networks:
       - internal
 
+  redis:
+    image: redis:7-alpine
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - internal
+
   flask:
     build: .
     env_file: .env
     environment:
       DATA_DIR: /data
+      RATELIMIT_STORAGE_URI: redis://redis:6379
     volumes:
       - leads_data:/data
     depends_on:
       - langflow
+      - redis
     restart: unless-stopped
     networks:
       - internal
@@ -42,5 +53,6 @@ networks:
 volumes:
   langflow_data:
   leads_data:
+  redis_data:
   caddy_data:
   caddy_config:
