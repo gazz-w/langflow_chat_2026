@@ -21,6 +21,23 @@ if (!userId) {
   localStorage.setItem("ananda_user_id", userId);
 }
 
+// Histórico de mensagens — persistido no navegador para sobreviver ao reload.
+let history = [];
+try {
+  history = JSON.parse(localStorage.getItem("ananda_history") || "[]");
+} catch (e) {
+  history = [];
+}
+
+function persistHistory() {
+  if (history.length > 200) history = history.slice(-200);
+  try {
+    localStorage.setItem("ananda_history", JSON.stringify(history));
+  } catch (e) {
+    /* localStorage cheio — ignora silenciosamente */
+  }
+}
+
 function autosize() {
   input.style.height = "auto";
   input.style.height = Math.min(input.scrollHeight, 200) + "px";
@@ -78,8 +95,16 @@ function addTyping() {
   return msg;
 }
 
+// Redesenha as mensagens salvas ao abrir/recarregar a página.
+function restoreHistory() {
+  history.forEach((m) => addMessage(m.text, m.who));
+}
+restoreHistory();
+
 async function send(text) {
   addMessage(text, "user");
+  history.push({ who: "user", text: text });
+  persistHistory();
   input.value = "";
   autosize();
   input.disabled = true;
@@ -102,6 +127,8 @@ async function send(text) {
     if (data.usage) renderUsage(data.usage);
     if (data.reply) {
       addMessage(data.reply, "bot");
+      history.push({ who: "bot", text: data.reply });
+      persistHistory();
     } else {
       addMessage(data.error || "Ocorreu um erro inesperado.", "bot");
     }
@@ -135,6 +162,8 @@ document.querySelectorAll(".chip").forEach((chip) => {
 newChatBtn.addEventListener("click", () => {
   sessionId = newSessionId();
   localStorage.setItem("ananda_session", sessionId);
+  history = [];
+  localStorage.removeItem("ananda_history");
   thread.innerHTML = "";
   welcome.style.display = "";
   input.focus();
