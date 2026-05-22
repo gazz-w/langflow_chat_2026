@@ -16,7 +16,7 @@
       line-height: 1.5;
     }
     .wrap { max-width: 1100px; margin: 0 auto; }
-    header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 22px; }
+    header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 18px; }
     h1 { font-size: 22px; }
     .count {
       font-size: 13px;
@@ -26,6 +26,39 @@
       border-radius: 999px;
       padding: 3px 12px;
     }
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .search { display: flex; gap: 8px; flex: 1; min-width: 240px; }
+    .search input {
+      flex: 1;
+      font: inherit;
+      font-size: 14px;
+      background: #2a2a2d;
+      color: #ececec;
+      border: 1px solid #38383c;
+      border-radius: 8px;
+      padding: 8px 12px;
+      outline: none;
+    }
+    .search input:focus { border-color: #8b6df0; }
+    .search button, .export {
+      font: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 8px;
+      padding: 8px 14px;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .search button { background: #8b6df0; color: #fff; border: none; }
+    .export { background: transparent; color: #ececec; border: 1px solid #38383c; }
+    .export:hover { background: #2a2a2d; }
+    .clear { color: #9a9aa3; font-size: 13px; align-self: center; }
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
     th, td {
@@ -48,6 +81,17 @@
     a { color: #8b6df0; }
     .muted { color: #9a9aa3; }
     .empty { color: #9a9aa3; padding: 48px 0; text-align: center; }
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 22px;
+      font-size: 14px;
+    }
+    .pagination a { text-decoration: none; }
+    .pagination .disabled { color: #4a4a50; }
+    .pagination .pageinfo { color: #9a9aa3; }
   </style>
 </head>
 
@@ -55,8 +99,23 @@
   <div class="wrap">
     <header>
       <h1>Cadastros</h1>
-      <span class="count">{{ total }} lead(s)</span>
+      <span class="count">
+        {% if query %}{{ filtered }} de {{ total }}{% else %}{{ total }}{% endif %} lead(s)
+      </span>
     </header>
+
+    <div class="toolbar">
+      <form method="get" class="search">
+        <input type="search" name="q" value="{{ query }}"
+          placeholder="Buscar por e-mail..." autocomplete="off">
+        <button type="submit">Buscar</button>
+        {% if query %}<a class="clear" href="/admin">limpar</a>{% endif %}
+      </form>
+      <a class="export"
+        href="/admin/export.csv{% if query %}?q={{ query|urlencode }}{% endif %}">
+        Exportar CSV
+      </a>
+    </div>
 
     {% if leads %}
     <div class="table-wrap">
@@ -97,8 +156,23 @@
         </tbody>
       </table>
     </div>
+
+    {% if pages > 1 %}
+    <div class="pagination">
+      {% if page > 1 %}
+      <a href="?page={{ page - 1 }}{% if query %}&q={{ query|urlencode }}{% endif %}">← anterior</a>
+      {% else %}<span class="disabled">← anterior</span>{% endif %}
+      <span class="pageinfo">página {{ page }} de {{ pages }}</span>
+      {% if page < pages %}
+      <a href="?page={{ page + 1 }}{% if query %}&q={{ query|urlencode }}{% endif %}">próxima →</a>
+      {% else %}<span class="disabled">próxima →</span>{% endif %}
+    </div>
+    {% endif %}
+
     {% else %}
-    <p class="empty">Nenhum cadastro ainda.</p>
+    <p class="empty">
+      {% if query %}Nenhum cadastro com esse e-mail.{% else %}Nenhum cadastro ainda.{% endif %}
+    </p>
     {% endif %}
   </div>
 </body>

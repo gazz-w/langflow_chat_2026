@@ -1,3 +1,5 @@
+import csv
+import io
 import json
 import os
 import re
@@ -6,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 
 import requests
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, Response, jsonify, render_template, request
 from limits import RateLimitItemPerDay, RateLimitItemPerHour, storage, strategies
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -322,12 +324,83 @@ def read_leads() -> list:
     return leads
 
 
+PAGE_SIZE = 50
+
+
+def _filter_by_email(leads: list, query: str) -> list:
+    """Filtra leads cujo e-mail contém o termo (case-insensitive)."""
+    if not query:
+        return leads
+    q = query.lower()
+    return [lead for lead in leads if q in (lead.get("email") or "").lower()]
+
+
 @app.route("/admin")
 def admin():
     if not _admin_allowed():
         return "Não encontrado", 404
-    leads = read_leads()
-    return render_template("admin.html", leads=leads, total=len(leads))
+
+    query = (request.args.get("q") or "").strip()
+    all_leads = read_leads()
+    total = len(all_leads)
+
+    leads = _filter_by_email(all_leads, query)
+    filtered = len(leads)
+
+    try:
+        page = max(1, int(request.args.get("page", "1")))
+    except ValueError:
+        page = 1
+    pages = max(1, (filtered + PAGE_SIZE - 1) // PAGE_SIZE)
+    page = min(page, pages)
+    start = (page - 1) * PAGE_SIZE
+    page_leads = leads[start:start + PAGE_SIZE]
+
+    return render_template(
+        "admin.html",
+        leads=page_leads,
+        total=total,
+        filtered=filtered,
+        query=query,
+        page=page,
+        pages=pages,
+    )
+
+
+@app.route("/admin/export.csv")
+def admin_export():
+    if not _admin_allowed():
+        return "Não encontrado", 404
+
+    query = (request.args.get("q") or "").strip()
+    leads = _filter_by_email(read_leads(), query)
+
+    buf = io.StringIO()
+    buf.write("﻿")  # BOM: faz o Excel abrir os acentos corretamente
+    writer = csv.writer(buf, delimiter=";")
+    writer.writerow([
+        "Data", "Nome", "Telefone", "E-mail", "Sessão",
+        "Consentimento comunidade", "Consentimento agências",
+        "Versão do consentimento",
+    ])
+    for lead in leads:
+        writer.writerow([
+            lead.get("ts_fmt", ""),
+            lead.get("name", ""),
+            lead.get("phone", ""),
+            lead.get("email", ""),
+            lead.get("session_id", ""),
+            "sim" if lead.get("consent_community") else "não",
+            "sim" if lead.get("consent_share_agencies") else "não",
+            lead.get("consent_version", ""),
+        ])
+
+    filename = f"leads_{datetime.now(_BRT).strftime('%Y-%m-%d')}.csv"
+    return Response(
+        buf.getvalue(),
+        mimetype="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
 
 
 @app.route("/admin/session/<session_id>")
