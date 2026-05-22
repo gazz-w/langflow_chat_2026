@@ -2,7 +2,7 @@ import json
 import os
 import re
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import requests
 from dotenv import load_dotenv
@@ -280,6 +280,81 @@ def chat():
         )
 
     return jsonify({"reply": reply, "usage": usage_snapshot(ip)})
+
+
+# ── Painel administrativo (acesso restrito) ────────────────────────────
+# A proteção principal (senha) é feita pelo Caddy no subdomínio admin.
+# ADMIN_HOST é uma trava extra: o painel só responde no host correto.
+ADMIN_HOST = os.environ.get("ADMIN_HOST", "")
+_BRT = timezone(timedelta(hours=-3))
+
+
+def _admin_allowed() -> bool:
+    """Defesa em profundidade: o painel só responde no host admin."""
+    return not ADMIN_HOST or request.host == ADMIN_HOST
+
+
+def _fmt_ts(ts: str) -> str:
+    try:
+        return datetime.fromisoformat(ts).astimezone(_BRT).strftime("%d/%m/%Y %H:%M")
+    except (ValueError, TypeError):
+        return ts or "—"
+
+
+def read_leads() -> list:
+    """Lê o leads.jsonl e devolve os cadastros (mais recentes primeiro)."""
+    leads = []
+    try:
+        with open(LEADS_FILE, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    lead = json.loads(line)
+                except ValueError:
+                    continue
+                lead["ts_fmt"] = _fmt_ts(lead.get("ts", ""))
+                leads.append(lead)
+    except OSError:
+        pass
+    leads.reverse()
+    return leads
+
+
+@app.route("/admin")
+def admin():
+    if not _admin_allowed():
+        return "Não encontrado", 404
+    leads = read_leads()
+    return render_template("admin.html", leads=leads, total=len(leads))
+
+
+@app.route("/admin/session/<session_id>")
+def admin_session(session_id):
+    if not _admin_allowed():
+        return "Não encontrado", 404
+    messages, error = [], None
+    try:
+        resp = requests.get(
+            f"{LANGFLOW_BASE_URL}/api/v1/monitor/messages",
+            params={"session_id": session_id},
+            headers={"x-api-key": LANGFLOW_API_KEY},
+            timeout=15,
+        )
+        resp.raise_for_status()
+        messages = resp.json()
+        messages.sort(key=lambda m: m.get("timestamp") or "")
+    except requests.RequestException as exc:
+        error = f"Não foi possível carregar a conversa: {exc}"
+    except (ValueError, AttributeError):
+        error = "Resposta do Langflow em formato inesperado."
+    return render_template(
+        "admin_session.html",
+        session_id=session_id,
+        messages=messages,
+        error=error,
+    )
 
 
 if __name__ == "__main__":

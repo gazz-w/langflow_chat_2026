@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Painel · Cadastros</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: #1b1b1d;
+      color: #ececec;
+      padding: 28px 20px;
+      line-height: 1.5;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; }
+    header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 22px; }
+    h1 { font-size: 22px; }
+    .count {
+      font-size: 13px;
+      color: #9a9aa3;
+      background: #2a2a2d;
+      border: 1px solid #38383c;
+      border-radius: 999px;
+      padding: 3px 12px;
+    }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid #38383c;
+      white-space: nowrap;
+    }
+    th {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: #9a9aa3;
+      font-weight: 600;
+    }
+    tr:hover td { background: #2a2a2d; }
+    .badge { font-size: 12px; padding: 2px 8px; border-radius: 6px; }
+    .badge.yes { background: #1f3d2a; color: #4ade80; }
+    .badge.no { background: #332a2d; color: #9a9aa3; }
+    a { color: #8b6df0; }
+    .muted { color: #9a9aa3; }
+    .empty { color: #9a9aa3; padding: 48px 0; text-align: center; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Cadastros</h1>
+      <span class="count">{{ total }} lead(s)</span>
+    </header>
+
+    {% if leads %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Nome</th>
+            <th>Telefone</th>
+            <th>E-mail</th>
+            <th>Comunidade</th>
+            <th>Agências</th>
+            <th>Conversa</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for lead in leads %}
+          <tr>
+            <td class="muted">{{ lead.ts_fmt }}</td>
+            <td>{{ lead.name }}</td>
+            <td>{{ lead.phone }}</td>
+            <td>{{ lead.email }}</td>
+            <td>
+              {% if lead.consent_community %}<span class="badge yes">sim</span>
+              {% else %}<span class="badge no">não</span>{% endif %}
+            </td>
+            <td>
+              {% if lead.consent_share_agencies %}<span class="badge yes">sim</span>
+              {% else %}<span class="badge no">não</span>{% endif %}
+            </td>
+            <td>
+              {% if lead.session_id %}
+              <a href="/admin/session/{{ lead.session_id }}">ver conversa</a>
+              {% else %}<span class="muted">—</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="empty">Nenhum cadastro ainda.</p>
+    {% endif %}
+  </div>
+</body>
+
+</html>

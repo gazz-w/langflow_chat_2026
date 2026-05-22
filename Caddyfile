@@ -1,13 +1,27 @@
 viajandocomananda.com, www.viajandocomananda.com {
+    # O painel admin NÃO é acessível pelo domínio público —
+    # só pelo subdomínio admin, protegido por senha.
+    @admin path /admin /admin/*
+    handle @admin {
+        respond 404
+    }
+    handle {
+        reverse_proxy flask:5000
+    }
+}
+
+# Painel administrativo (leads + conversas) — protegido por senha.
+# O hash bcrypt vem da variável ADMIN_PASS_HASH no .env.
+admin.viajandocomananda.com {
+    basic_auth {
+        admin {env.ADMIN_PASS_HASH}
+    }
+    rewrite / /admin
     reverse_proxy flask:5000
 }
 
-# Acesso à UI do Langflow (gestão do fluxo) — protegido por senha.
-# O hash bcrypt é lido da variável LANGFLOW_PASS_HASH no .env.
-# Para gerar um novo hash:
-#   docker run --rm caddy:alpine caddy hash-password --plaintext 'sua-senha'
-# Ao salvar no .env, dobre cada $ (ex: $2a$14$... vira $$2a$$14$$...)
-# para escapar a interpolação do Docker Compose.
+# UI do Langflow (gestão do fluxo) — protegida por senha.
+# O hash bcrypt vem da variável LANGFLOW_PASS_HASH no .env.
 langflow.viajandocomananda.com {
     basic_auth {
         admin {env.LANGFLOW_PASS_HASH}

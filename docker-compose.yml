@@ -24,6 +24,7 @@ services:
     environment:
       DATA_DIR: /data
       RATELIMIT_STORAGE_URI: redis://redis:6379
+      ADMIN_HOST: admin.viajandocomananda.com
     volumes:
       - leads_data:/data
     depends_on:
