@@ -130,3 +130,8 @@ A permissão de trabalho durante o intercâmbio existe em alguns países e está
 ## Vale a pena fazer um intercâmbio?
 
 Para a maioria das pessoas, o intercâmbio vale muito a pena. Ele acelera o aprendizado do idioma, desenvolve independência e maturidade, amplia o currículo e abre portas para oportunidades de carreira internacional. Também é uma experiência de vida marcante, com novas amizades e contato com outra cultura. Por outro lado, exige planejamento financeiro, adaptação a um novo país e, muitas vezes, sair da zona de conforto. O segredo para que valha a pena é ter clareza do objetivo, planejar bem o orçamento e escolher o programa certo para o seu perfil.
+
+
+## Qual a Idade da Ananda e Gabriel?
+
+Ananda e Gabriel possuem 29 anos e são de Brasília.
