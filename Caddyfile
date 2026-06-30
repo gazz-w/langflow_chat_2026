@@ -25,23 +25,26 @@ viajandocomananda.com, www.viajandocomananda.com {
 }
 
 # Painel administrativo (leads + conversas).
-# Camadas: Cloudflare Access (borda, SSO+MFA) + basic_auth (reforço na origem).
-# FASE 2: ao fechar a origem com o Cloudflare Tunnel, remover o basic_auth.
+# Autenticação primária: Cloudflare Access (borda, SSO+MFA).
+# Origem: quem traz o "segredo de origem" (injetado pela Cloudflare) entra
+# direto; sem o segredo (acesso direto ao IP) cai no basic_auth de fallback —
+# assim não há login duplo via Cloudflare e ninguém fica trancado.
+# FASE 2 (final): trocar o fallback por 403, removendo o basic_auth.
 admin.viajandocomananda.com {
 	import secure_headers
-	basic_auth {
+	@nosecret not header X-Origin-Secret {$ORIGIN_SHARED_SECRET}
+	basic_auth @nosecret {
 		admin {env.ADMIN_PASS_HASH}
 	}
 	rewrite / /admin
 	reverse_proxy flask:5000
 }
 
-# UI do Langflow (gestão do fluxo).
-# Camadas: Cloudflare Access (borda, SSO+MFA) + basic_auth (reforço na origem).
-# FASE 2: remover o basic_auth e ligar a auth nativa do Langflow.
+# UI do Langflow (gestão do fluxo). Mesmo esquema do painel admin.
 langflow.viajandocomananda.com {
 	import secure_headers
-	basic_auth {
+	@nosecret not header X-Origin-Secret {$ORIGIN_SHARED_SECRET}
+	basic_auth @nosecret {
 		admin {env.LANGFLOW_PASS_HASH}
 	}
 	reverse_proxy langflow:7860
