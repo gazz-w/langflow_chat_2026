@@ -1,6 +1,15 @@
+# Rotação de logs padrão (evita logs do Docker crescerem sem limite no disco).
+# Aplica-se a cada serviço via âncora; vale no próximo recreate de cada container.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   langflow:
     # Versão fixada (em vez de :latest) para evitar quebras em upgrades surpresa.
+    # NÃO é auto-atualizado pelo Watchtower (versão fixa + fora da lista dele).
     # FASE 2: trocar AUTO_LOGIN para false e adicionar LANGFLOW_SUPERUSER,
     # LANGFLOW_SUPERUSER_PASSWORD e LANGFLOW_SECRET_KEY (exige reemitir a API key).
     image: langflowai/langflow:1.9.3
@@ -9,6 +18,7 @@ services:
     environment:
       - LANGFLOW_AUTO_LOGIN=true
     restart: unless-stopped
+    logging: *default-logging
     networks:
       - internal
 
@@ -18,6 +28,7 @@ services:
     volumes:
       - redis_data:/data
     restart: unless-stopped
+    logging: *default-logging
     networks:
       - internal
 
@@ -34,6 +45,7 @@ services:
       - langflow
       - redis
     restart: unless-stopped
+    logging: *default-logging
     networks:
       - internal
 
@@ -48,8 +60,24 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     restart: unless-stopped
+    logging: *default-logging
     networks:
       - internal
+
+  # Auto-atualização de containers — monitora APENAS Caddy e Redis.
+  # Verifica diariamente às 04:00 UTC (baixo fluxo) e remove imagens antigas.
+  # Langflow (pinado) e Flask (buildado localmente) ficam de fora de propósito.
+  watchtower:
+    image: containrrr/watchtower
+    command: ananda-caddy-1 ananda-redis-1
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_SCHEDULE=0 0 4 * * *
+      - TZ=Etc/UTC
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+    logging: *default-logging
 
 networks:
   internal:
