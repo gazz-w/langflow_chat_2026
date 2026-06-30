@@ -1,30 +1,48 @@
+# Headers de segurança reutilizáveis (aplicados nos painéis administrativos).
+# Obs.: o desafio 401 do basic_auth NÃO carrega estes headers (o Caddy escreve
+# o erro fora do wrapper de headers); eles valem nas respostas já autenticadas.
+# Na borda, o Cloudflare Access cobre o restante.
+(secure_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}
+
 viajandocomananda.com, www.viajandocomananda.com {
-    # O painel admin NÃO é acessível pelo domínio público —
-    # só pelo subdomínio admin, protegido por senha.
-    @admin path /admin /admin/*
-    handle @admin {
-        respond 404
-    }
-    handle {
-        reverse_proxy flask:5000
-    }
+	# O painel admin NÃO é acessível pelo domínio público —
+	# só pelo subdomínio admin.
+	@admin path /admin /admin/*
+	handle @admin {
+		respond 404
+	}
+	handle {
+		reverse_proxy flask:5000
+	}
 }
 
-# Painel administrativo (leads + conversas) — protegido por senha.
-# O hash bcrypt vem da variável ADMIN_PASS_HASH no .env.
+# Painel administrativo (leads + conversas).
+# Camadas: Cloudflare Access (borda, SSO+MFA) + basic_auth (reforço na origem).
+# FASE 2: ao fechar a origem com o Cloudflare Tunnel, remover o basic_auth.
 admin.viajandocomananda.com {
-    basic_auth {
-        admin {env.ADMIN_PASS_HASH}
-    }
-    rewrite / /admin
-    reverse_proxy flask:5000
+	import secure_headers
+	basic_auth {
+		admin {env.ADMIN_PASS_HASH}
+	}
+	rewrite / /admin
+	reverse_proxy flask:5000
 }
 
-# UI do Langflow (gestão do fluxo) — protegida por senha.
-# O hash bcrypt vem da variável LANGFLOW_PASS_HASH no .env.
+# UI do Langflow (gestão do fluxo).
+# Camadas: Cloudflare Access (borda, SSO+MFA) + basic_auth (reforço na origem).
+# FASE 2: remover o basic_auth e ligar a auth nativa do Langflow.
 langflow.viajandocomananda.com {
-    basic_auth {
-        admin {env.LANGFLOW_PASS_HASH}
-    }
-    reverse_proxy langflow:7860
+	import secure_headers
+	basic_auth {
+		admin {env.LANGFLOW_PASS_HASH}
+	}
+	reverse_proxy langflow:7860
 }

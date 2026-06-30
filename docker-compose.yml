@@ -1,6 +1,9 @@
 services:
   langflow:
-    image: langflowai/langflow:latest
+    # Versão fixada (em vez de :latest) para evitar quebras em upgrades surpresa.
+    # FASE 2: trocar AUTO_LOGIN para false e adicionar LANGFLOW_SUPERUSER,
+    # LANGFLOW_SUPERUSER_PASSWORD e LANGFLOW_SECRET_KEY (exige reemitir a API key).
+    image: langflowai/langflow:1.9.3
     volumes:
       - langflow_data:/root/.cache/langflow
     environment:
