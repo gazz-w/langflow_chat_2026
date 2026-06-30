@@ -74,6 +74,9 @@ services:
       - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_SCHEDULE=0 0 4 * * *
       - TZ=Etc/UTC
+      # O cliente Docker embutido no Watchtower negocia API 1.25 por padrão,
+      # abaixo do mínimo do daemon (1.40). Forçar uma versão compatível.
+      - DOCKER_API_VERSION=1.40
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
