@@ -1,7 +1,4 @@
 # Headers de segurança reutilizáveis (aplicados nos painéis administrativos).
-# Obs.: o desafio 401 do basic_auth NÃO carrega estes headers (o Caddy escreve
-# o erro fora do wrapper de headers); eles valem nas respostas já autenticadas.
-# Na borda, o Cloudflare Access cobre o restante.
 (secure_headers) {
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
@@ -25,27 +22,29 @@ viajandocomananda.com, www.viajandocomananda.com {
 }
 
 # Painel administrativo (leads + conversas).
-# Autenticação primária: Cloudflare Access (borda, SSO+MFA).
-# Origem: quem traz o "segredo de origem" (injetado pela Cloudflare) entra
-# direto; sem o segredo (acesso direto ao IP) cai no basic_auth de fallback —
-# assim não há login duplo via Cloudflare e ninguém fica trancado.
-# FASE 2 (final): trocar o fallback por 403, removendo o basic_auth.
+# Autenticação na borda: Cloudflare Access (SSO + OTP). Na origem exigimos o
+# "segredo de origem" que a Cloudflare injeta (header X-Origin-Secret): quem o
+# traz é proxiado; acesso direto ao IP sem o segredo é bloqueado com 403.
 admin.viajandocomananda.com {
 	import secure_headers
-	@nosecret not header X-Origin-Secret {$ORIGIN_SHARED_SECRET}
-	basic_auth @nosecret {
-		admin {env.ADMIN_PASS_HASH}
+	@hassecret header X-Origin-Secret {$ORIGIN_SHARED_SECRET}
+	handle @hassecret {
+		rewrite / /admin
+		reverse_proxy flask:5000
 	}
-	rewrite / /admin
-	reverse_proxy flask:5000
+	handle {
+		respond "Forbidden" 403
+	}
 }
 
 # UI do Langflow (gestão do fluxo). Mesmo esquema do painel admin.
 langflow.viajandocomananda.com {
 	import secure_headers
-	@nosecret not header X-Origin-Secret {$ORIGIN_SHARED_SECRET}
-	basic_auth @nosecret {
-		admin {env.LANGFLOW_PASS_HASH}
+	@hassecret header X-Origin-Secret {$ORIGIN_SHARED_SECRET}
+	handle @hassecret {
+		reverse_proxy langflow:7860
 	}
-	reverse_proxy langflow:7860
+	handle {
+		respond "Forbidden" 403
+	}
 }
