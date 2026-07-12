@@ -1,0 +1,45 @@
+Copyright (c) 2026 Gabriel Shimabuko. All rights reserved.
+
+PROPRIETARY SOFTWARE — ALL RIGHTS RESERVED
+
+The source code and all associated materials in this repository (the
+"Software") are the exclusive property of Gabriel Shimabuko (the "Author")
+and are protected by copyright law and international treaties.
+
+The Software is made publicly viewable for portfolio, evaluation, and
+educational reference purposes only.
+
+You MAY:
+  - View and read the source code.
+  - Reference it when evaluating the Author's work (e.g., recruiters,
+    collaborators).
+
+You MAY NOT, without the prior written permission of the Author:
+  - Use the Software, in whole or in part, in any product or service.
+  - Copy, reproduce, modify, adapt, translate, or create derivative works.
+  - Distribute, publish, sublicense, sell, rent, lease, or otherwise make
+    the Software available to any third party.
+  - Use the Software for any commercial purpose.
+
+COMMERCIAL USE
+Commercial use of the Software is expressly prohibited unless authorized by
+a separate written commercial license granted by the Author. The Author
+reserves all rights to commercialize, license, and relicense the Software.
+
+THIRD-PARTY COMPONENTS
+The Software depends on third-party components (e.g., Flask, Caddy, Langflow,
+Redis, and others) that are distributed under their own respective licenses.
+Those components remain governed by their original licenses; this license
+applies only to the original code authored by the Author.
+
+LICENSING INQUIRIES
+For permission requests or commercial licensing, contact the Author via
+GitHub: https://github.com/gazz-w
+
+DISCLAIMER
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN
+ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

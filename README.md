@@ -5,7 +5,7 @@
 [![Status](https://img.shields.io/badge/status-beta-orange)](https://viajandocomananda.com)
 [![Live](https://img.shields.io/badge/live-viajandocomananda.com-2ea44f)](https://viajandocomananda.com)
 [![Python](https://img.shields.io/badge/python-3.11-blue)](https://www.python.org/)
-[![License](https://img.shields.io/badge/license-personal%20project-lightgrey)](#license)
+[![License](https://img.shields.io/badge/license-All%20Rights%20Reserved-red)](#license)
 
 > ⚠️ **Beta / Work in progress.** This project is live in production but still under active development. Features, the knowledge base and the AI behaviour are being refined continuously — expect changes.
 
@@ -125,7 +125,11 @@ docs/                  # architecture diagram, planning docs
 
 ## License
 
-Personal / portfolio project. © 2026 Gabriel Shimabuko. Feel free to explore the code.
+**© 2026 Gabriel Shimabuko. All rights reserved.**
+
+This source code is published for **portfolio and evaluation purposes only**. It may **not** be used, copied, modified, distributed, or used commercially without prior written permission. Commercial use requires a separate commercial license from the author. See [LICENSE](LICENSE) for the full terms.
+
+For licensing or commercial inquiries, reach out via [GitHub](https://github.com/gazz-w).
 
 ## Author
 
