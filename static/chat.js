@@ -101,6 +101,86 @@ function restoreHistory() {
 }
 restoreHistory();
 
+// Lê o SSE do backend e revela o texto progressivamente (efeito "digitando").
+// O renderizador é incremental: quando o backend enviar tokens reais, o
+// mesmo código exibe cada um conforme chega, sem alteração.
+async function readStream(res, typing) {
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let received = ""; // texto já recebido do servidor
+  let shown = 0; // caracteres já revelados na tela
+  let content = null;
+  let errorText = null;
+  let doneReading = false;
+  let revealPromise = null;
+
+  const reveal = () =>
+    new Promise((resolve) => {
+      const step = () => {
+        if (shown < received.length) {
+          // Passo adaptativo: acompanha o ritmo do que chega sem travar.
+          const pending = received.length - shown;
+          shown = Math.min(shown + Math.max(2, Math.ceil(pending / 40)), received.length);
+          content.textContent = received.slice(0, shown);
+          scrollToBottom();
+        }
+        if (shown >= received.length && doneReading) return resolve();
+        requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    });
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let idx;
+    while ((idx = buffer.indexOf("\n\n")) !== -1) {
+      const block = buffer.slice(0, idx);
+      buffer = buffer.slice(idx + 2);
+      const line = block.split("\n").find((l) => l.startsWith("data:"));
+      if (!line) continue;
+      let evt;
+      try {
+        evt = JSON.parse(line.slice(5));
+      } catch (e) {
+        continue;
+      }
+      if (evt.type === "token" && evt.text) {
+        if (!content) {
+          typing.remove();
+          content = addMessage("", "bot");
+        }
+        received += evt.text;
+        if (!revealPromise) revealPromise = reveal();
+      } else if (evt.type === "done") {
+        if (evt.usage) renderUsage(evt.usage);
+      } else if (evt.type === "error") {
+        errorText = evt.error || "Ocorreu um erro inesperado.";
+        if (evt.usage) renderUsage(evt.usage);
+      }
+    }
+  }
+  doneReading = true;
+  if (revealPromise) await revealPromise;
+
+  if (content && received) {
+    // Markdown só no final — parsear texto parcial quebraria o HTML.
+    content.innerHTML = marked.parse(received);
+    scrollToBottom();
+    history.push({ who: "bot", text: received });
+    persistHistory();
+  }
+  if (errorText) {
+    if (!content) typing.remove();
+    addMessage(errorText, "bot");
+  } else if (!content) {
+    typing.remove();
+    addMessage("Ocorreu um erro inesperado.", "bot");
+  }
+}
+
 async function send(text) {
   addMessage(text, "user");
   history.push({ who: "user", text: text });
@@ -120,18 +200,27 @@ async function send(text) {
         message: text,
         session_id: sessionId,
         user_id: userId,
+        stream: true,
       }),
     });
-    const data = await res.json();
-    typing.remove();
-    if (data.usage) renderUsage(data.usage);
-    if (data.reply) {
-      addMessage(data.reply, "bot");
-      history.push({ who: "bot", text: data.reply });
-      persistHistory();
-    } else {
-      addMessage(data.error || "Ocorreu um erro inesperado.", "bot");
+
+    const ctype = res.headers.get("Content-Type") || "";
+    if (!ctype.includes("text/event-stream")) {
+      // Resposta não-stream: erros de validação, limite (429) ou fallback.
+      const data = await res.json();
+      typing.remove();
+      if (data.usage) renderUsage(data.usage);
+      if (data.reply) {
+        addMessage(data.reply, "bot");
+        history.push({ who: "bot", text: data.reply });
+        persistHistory();
+      } else {
+        addMessage(data.error || "Ocorreu um erro inesperado.", "bot");
+      }
+      return;
     }
+
+    await readStream(res, typing);
   } catch (err) {
     typing.remove();
     addMessage("Não consegui me conectar ao servidor. Tente novamente.", "bot");

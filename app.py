@@ -8,7 +8,14 @@ from datetime import datetime, timedelta, timezone
 
 import requests
 from dotenv import load_dotenv
-from flask import Flask, Response, jsonify, render_template, request
+from flask import (
+    Flask,
+    Response,
+    jsonify,
+    render_template,
+    request,
+    stream_with_context,
+)
 from limits import RateLimitItemPerDay, RateLimitItemPerHour, storage, strategies
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -84,6 +91,70 @@ def extract_reply(payload: dict) -> str:
     """Pega o texto da resposta de dentro da estrutura aninhada do Langflow."""
     message = payload["outputs"][0]["outputs"][0]["results"]["message"]
     return message["text"]
+
+
+def _sse(obj: dict) -> str:
+    """Serializa um evento no formato Server-Sent Events."""
+    return "data: " + json.dumps(obj, ensure_ascii=False) + "\n\n"
+
+
+def _stream_langflow(payload: dict, ip: str):
+    """Consome o run do Langflow em modo stream (NDJSON) e repassa como SSE.
+
+    O Agent atual não emite eventos 'token' (o texto completo chega no
+    evento 'end'), mas o parser já trata 'token' — quando o flow passar a
+    suportá-lo, o streaming real funciona sem mudar nada aqui.
+    """
+    emitted = False
+    try:
+        with requests.post(
+            f"{LANGFLOW_BASE_URL}/api/v1/run/{FLOW_ID}?stream=true",
+            json=payload,
+            headers={"x-api-key": LANGFLOW_API_KEY},
+            stream=True,
+            timeout=(10, 90),
+        ) as resp:
+            resp.raise_for_status()
+            for line in resp.iter_lines(decode_unicode=True):
+                if not line:
+                    continue
+                if line.startswith("data:"):
+                    # Tolera SSE além de NDJSON (formato varia entre versões).
+                    line = line[5:].strip()
+                try:
+                    event = json.loads(line)
+                except ValueError:
+                    continue
+                etype = event.get("event")
+                data = event.get("data") or {}
+                if etype == "token":
+                    chunk = data.get("chunk") or ""
+                    if chunk:
+                        emitted = True
+                        yield _sse({"type": "token", "text": chunk})
+                elif etype == "end":
+                    if not emitted:
+                        reply = extract_reply(data.get("result") or {})
+                        yield _sse({"type": "token", "text": reply})
+                    yield _sse({"type": "done", "usage": usage_snapshot(ip)})
+                    return
+        yield _sse({
+            "type": "error",
+            "error": "Resposta do Langflow em formato inesperado.",
+            "usage": usage_snapshot(ip),
+        })
+    except requests.RequestException as exc:
+        yield _sse({
+            "type": "error",
+            "error": f"Falha ao falar com o Langflow: {exc}",
+            "usage": usage_snapshot(ip),
+        })
+    except (KeyError, IndexError, ValueError, TypeError):
+        yield _sse({
+            "type": "error",
+            "error": "Resposta do Langflow em formato inesperado.",
+            "usage": usage_snapshot(ip),
+        })
 
 
 DATA_DIR = os.environ.get("DATA_DIR", os.path.dirname(__file__))
@@ -302,6 +373,16 @@ def chat():
         langflow_payload["tweaks"] = {
             MEMORY_COMPONENT_ID: {"session_id": session_id}
         }
+
+    # Modo streaming (SSE): o cliente pede com {"stream": true}. Erros de
+    # validação/limite acima continuam respondendo JSON — o frontend decide
+    # pelo Content-Type. Sem "stream", segue o caminho síncrono original.
+    if body.get("stream"):
+        return Response(
+            stream_with_context(_stream_langflow(langflow_payload, ip)),
+            mimetype="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
 
     try:
         resp = requests.post(
