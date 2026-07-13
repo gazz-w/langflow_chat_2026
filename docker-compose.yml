@@ -17,6 +17,11 @@ services:
       - langflow_data:/root/.cache/langflow
     environment:
       - LANGFLOW_AUTO_LOGIN=true
+      # Secret key ESTÁVEL (do .env). Sem isso o Langflow regenera o secret
+      # a cada recreate do container e invalida as API keys guardadas no
+      # banco (o arquivo do secret auto-gerado vive fora do volume) —
+      # foi exatamente o que derrubou o /chat em 2026-07-13.
+      - LANGFLOW_SECRET_KEY=${LANGFLOW_SECRET_KEY}
     restart: unless-stopped
     logging: *default-logging
     networks:
