@@ -164,6 +164,7 @@ def _stream_langflow(payload: dict, ip: str):
 DATA_DIR = os.environ.get("DATA_DIR", os.path.dirname(__file__))
 LEADS_FILE = os.path.join(DATA_DIR, "leads.jsonl")
 SESSIONS_FILE = os.path.join(DATA_DIR, "sessions.jsonl")
+FEEDBACK_FILE = os.path.join(DATA_DIR, "feedback.jsonl")
 CONSENT_VERSION = "2026-05-18.v1"
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -425,6 +426,39 @@ def chat():
     return jsonify({"reply": reply, "usage": usage_snapshot(ip)})
 
 
+def _clip(text, limit: int) -> str:
+    """Normaliza e limita o tamanho de um campo (defesa contra payloads gordos)."""
+    return (str(text or "")).strip()[:limit]
+
+
+@app.route("/feedback", methods=["POST"])
+def feedback():
+    """Registra a avaliação (👍/👎) de uma resposta, com pergunta+resposta para
+    permitir revisar e melhorar o prompt/pipeline. Grava em feedback.jsonl."""
+    body = request.get_json(silent=True) or {}
+    rating = (body.get("rating") or "").strip()
+    if rating not in ("up", "down"):
+        return jsonify({"error": "Avaliação inválida."}), 400
+
+    entry = {
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "rating": rating,
+        "reason": _clip(body.get("reason"), 300),
+        "question": _clip(body.get("question"), 2000),
+        "answer": _clip(body.get("answer"), 8000),
+        "msg_id": _clip(body.get("msg_id"), 80),
+        "session_id": _clip(body.get("session_id"), 120),
+        "user_id": _clip(body.get("user_id"), 120),
+    }
+    try:
+        with open(FEEDBACK_FILE, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except OSError:
+        return jsonify({"error": "Não foi possível registrar o feedback."}), 500
+
+    return jsonify({"ok": True})
+
+
 # ── Painel administrativo (acesso restrito) ────────────────────────────
 # A proteção principal (senha) é feita pelo Caddy no subdomínio admin.
 # ADMIN_HOST é uma trava extra: o painel só responde no host correto.
@@ -474,6 +508,48 @@ def _filter_by_email(leads: list, query: str) -> list:
         return leads
     q = query.lower()
     return [lead for lead in leads if q in (lead.get("email") or "").lower()]
+
+
+def read_feedback() -> list:
+    """Lê feedback.jsonl (mais recentes primeiro), mantendo apenas a avaliação
+    mais recente de cada mensagem (o usuário pode ter trocado 👍↔👎)."""
+    raw = []
+    try:
+        with open(FEEDBACK_FILE, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    raw.append(json.loads(line))
+                except ValueError:
+                    continue
+    except OSError:
+        pass
+    raw.reverse()
+    items, seen = [], set()
+    for fb in raw:
+        mid = fb.get("msg_id")
+        if mid and mid in seen:
+            continue
+        if mid:
+            seen.add(mid)
+        fb["ts_fmt"] = _fmt_ts(fb.get("ts", ""))
+        items.append(fb)
+    return items
+
+
+def _feedback_stats(items: list) -> dict:
+    """Agrega os números do topo do painel (inclui o KPI de respostas úteis)."""
+    up = sum(1 for i in items if i.get("rating") == "up")
+    down = sum(1 for i in items if i.get("rating") == "down")
+    total = up + down
+    return {
+        "up": up,
+        "down": down,
+        "total": total,
+        "helpful_pct": round(up * 100 / total) if total else None,
+    }
 
 
 @app.route("/admin")
@@ -600,6 +676,39 @@ def admin_user(user_id):
         lead=lead,
         conversations=conversations,
         error=error,
+    )
+
+
+@app.route("/admin/feedback")
+def admin_feedback():
+    if not _admin_allowed():
+        return "Não encontrado", 404
+
+    rating = (request.args.get("rating") or "").strip()
+    all_items = read_feedback()
+    stats = _feedback_stats(all_items)
+
+    if rating in ("up", "down"):
+        items = [i for i in all_items if i.get("rating") == rating]
+    else:
+        items = all_items
+
+    try:
+        page = max(1, int(request.args.get("page", "1")))
+    except ValueError:
+        page = 1
+    pages = max(1, (len(items) + PAGE_SIZE - 1) // PAGE_SIZE)
+    page = min(page, pages)
+    start = (page - 1) * PAGE_SIZE
+    page_items = items[start:start + PAGE_SIZE]
+
+    return render_template(
+        "admin_feedback.html",
+        items=page_items,
+        stats=stats,
+        rating=rating,
+        page=page,
+        pages=pages,
     )
 
 

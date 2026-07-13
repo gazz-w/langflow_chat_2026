@@ -275,6 +275,34 @@ html[data-theme="light"] .icon-moon { display: none; }
 .msg-content pre code { background: none; padding: 0; }
 .msg-content a { color: var(--accent); }
 
+/* Barra de feedback (👍/👎) abaixo das respostas do bot */
+.feedback { display: flex; align-items: center; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.feedback-q { font-size: 12px; color: var(--text-soft); }
+.fb-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 2px 9px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.fb-btn:hover { background: var(--bg-soft); }
+.fb-btn.selected { border-color: var(--accent); background: var(--accent-soft); }
+.fb-reasons { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; width: 100%; }
+.fb-reasons[hidden] { display: none; }
+.fb-reason {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  border-radius: 999px;
+  padding: 3px 11px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.fb-reason:hover { background: var(--bg-soft); color: var(--text); }
+
 .msg.user .msg-content {
   background: var(--user-bg);
   padding: 12px 16px;

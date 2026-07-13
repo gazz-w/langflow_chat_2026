@@ -18,6 +18,7 @@
     .wrap { max-width: 1100px; margin: 0 auto; }
     header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 18px; }
     h1 { font-size: 22px; }
+    .nav { margin-left: auto; font-size: 14px; }
     .count {
       font-size: 13px;
       color: #9a9aa3;
@@ -102,6 +103,7 @@
       <span class="count">
         {% if query %}{{ filtered }} de {{ total }}{% else %}{{ total }}{% endif %} lead(s)
       </span>
+      <nav class="nav"><a href="/admin/feedback">Feedback das respostas →</a></nav>
     </header>
 
     <div class="toolbar">

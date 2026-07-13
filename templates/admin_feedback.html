@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Painel · Feedback</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: #1b1b1d;
+      color: #ececec;
+      padding: 28px 20px;
+      line-height: 1.5;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; }
+    header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
+    h1 { font-size: 22px; }
+    .nav { margin-left: auto; font-size: 14px; }
+    a { color: #8b6df0; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .stats { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .stat {
+      background: #2a2a2d;
+      border: 1px solid #38383c;
+      border-radius: 10px;
+      padding: 12px 16px;
+      min-width: 120px;
+    }
+    .stat .num { font-size: 24px; font-weight: 700; }
+    .stat .lbl { font-size: 12px; color: #9a9aa3; text-transform: uppercase; letter-spacing: .04em; }
+    .stat.kpi .num { color: #4ade80; }
+    .stat.kpi.low .num { color: #f87171; }
+    .filters { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+    .filters a {
+      font-size: 13px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid #38383c;
+      color: #ececec;
+    }
+    .filters a.active { background: #8b6df0; border-color: #8b6df0; color: #fff; }
+    .card {
+      background: #232326;
+      border: 1px solid #38383c;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .card.down { border-left: 3px solid #f87171; }
+    .card.up { border-left: 3px solid #4ade80; }
+    .card-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      font-size: 13px;
+      color: #9a9aa3;
+      flex-wrap: wrap;
+    }
+    .rating { font-size: 15px; font-weight: 700; }
+    .rating.down { color: #f87171; }
+    .rating.up { color: #4ade80; }
+    .reason {
+      font-size: 12px;
+      background: #3a2a2d;
+      color: #f0a0a0;
+      padding: 2px 10px;
+      border-radius: 6px;
+    }
+    .qa { font-size: 14px; }
+    .qa .q { color: #cfcfe0; margin-bottom: 8px; }
+    .qa .a {
+      color: #ececec;
+      background: #1b1b1d;
+      border: 1px solid #38383c;
+      border-radius: 8px;
+      padding: 10px 12px;
+      white-space: pre-wrap;
+      max-height: 220px;
+      overflow: auto;
+    }
+    .qa .tag { color: #9a9aa3; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+    .empty { color: #9a9aa3; padding: 48px 0; text-align: center; }
+    .pagination {
+      display: flex; align-items: center; justify-content: center;
+      gap: 16px; margin-top: 22px; font-size: 14px;
+    }
+    .pagination .disabled { color: #4a4a50; }
+    .pagination .pageinfo { color: #9a9aa3; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Feedback das respostas</h1>
+      <nav class="nav"><a href="/admin">← Cadastros</a></nav>
+    </header>
+
+    <div class="stats">
+      <div class="stat kpi {% if stats.helpful_pct is not none and stats.helpful_pct < 70 %}low{% endif %}">
+        <div class="num">{% if stats.helpful_pct is not none %}{{ stats.helpful_pct }}%{% else %}—{% endif %}</div>
+        <div class="lbl">Respostas úteis (meta ≥ 70%)</div>
+      </div>
+      <div class="stat">
+        <div class="num">{{ stats.total }}</div>
+        <div class="lbl">Avaliações</div>
+      </div>
+      <div class="stat">
+        <div class="num" style="color:#4ade80">{{ stats.up }}</div>
+        <div class="lbl">👍 Úteis</div>
+      </div>
+      <div class="stat">
+        <div class="num" style="color:#f87171">{{ stats.down }}</div>
+        <div class="lbl">👎 Não úteis</div>
+      </div>
+    </div>
+
+    <div class="filters">
+      <a href="/admin/feedback" class="{% if not rating %}active{% endif %}">Todas</a>
+      <a href="/admin/feedback?rating=down" class="{% if rating == 'down' %}active{% endif %}">👎 Não úteis</a>
+      <a href="/admin/feedback?rating=up" class="{% if rating == 'up' %}active{% endif %}">👍 Úteis</a>
+    </div>
+
+    {% if items %}
+    {% for fb in items %}
+    <div class="card {{ fb.rating }}">
+      <div class="card-head">
+        <span class="rating {{ fb.rating }}">{% if fb.rating == 'up' %}👍 Útil{% else %}👎 Não útil{% endif %}</span>
+        <span>{{ fb.ts_fmt }}</span>
+        {% if fb.reason %}<span class="reason">{{ fb.reason }}</span>{% endif %}
+        {% if fb.user_id %}<a href="/admin/user/{{ fb.user_id }}">ver conversa</a>{% endif %}
+      </div>
+      <div class="qa">
+        {% if fb.question %}<div class="q"><span class="tag">Pergunta:</span> {{ fb.question }}</div>{% endif %}
+        <div class="tag">Resposta:</div>
+        <div class="a">{{ fb.answer }}</div>
+      </div>
+    </div>
+    {% endfor %}
+
+    {% if pages > 1 %}
+    <div class="pagination">
+      {% if page > 1 %}
+      <a href="?page={{ page - 1 }}{% if rating %}&rating={{ rating }}{% endif %}">← anterior</a>
+      {% else %}<span class="disabled">← anterior</span>{% endif %}
+      <span class="pageinfo">página {{ page }} de {{ pages }}</span>
+      {% if page < pages %}
+      <a href="?page={{ page + 1 }}{% if rating %}&rating={{ rating }}{% endif %}">próxima →</a>
+      {% else %}<span class="disabled">próxima →</span>{% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <p class="empty">Nenhuma avaliação ainda.</p>
+    {% endif %}
+  </div>
+</body>
+
+</html>

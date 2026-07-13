@@ -95,9 +95,114 @@ function addTyping() {
   return msg;
 }
 
+function newMsgId() {
+  return "m-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+// Avaliações já dadas (msgId -> "up"|"down"), para mostrar o estado após reload.
+let rated = {};
+try {
+  rated = JSON.parse(localStorage.getItem("ananda_rated") || "{}");
+} catch (e) {
+  rated = {};
+}
+function persistRated() {
+  try {
+    localStorage.setItem("ananda_rated", JSON.stringify(rated));
+  } catch (e) {
+    /* localStorage cheio — ignora */
+  }
+}
+
+function sendFeedback(payload) {
+  // Fire-and-forget: o feedback nunca deve travar a conversa.
+  fetch("/feedback", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(
+      Object.assign({ session_id: sessionId, user_id: userId }, payload)
+    ),
+  }).catch(() => {});
+}
+
+// Anexa a barra de feedback (👍/👎) ao corpo da mensagem do bot. É colocada
+// FORA do .msg-content (que é re-renderizado no streaming), como irmã dele.
+function attachFeedback(contentEl, msgId, question, answer) {
+  const body = contentEl.parentNode;
+
+  const bar = document.createElement("div");
+  bar.className = "feedback";
+  const label = document.createElement("span");
+  label.className = "feedback-q";
+  label.textContent = "Foi útil?";
+
+  const up = document.createElement("button");
+  up.type = "button";
+  up.className = "fb-btn";
+  up.textContent = "👍";
+  up.title = "Resposta útil";
+  const down = document.createElement("button");
+  down.type = "button";
+  down.className = "fb-btn";
+  down.textContent = "👎";
+  down.title = "Resposta não útil";
+
+  const reasons = document.createElement("div");
+  reasons.className = "fb-reasons";
+  reasons.hidden = true;
+  ["Incorreta", "Incompleta", "Fora do tema"].forEach((r) => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "fb-reason";
+    chip.textContent = r;
+    chip.addEventListener("click", () => {
+      sendFeedback({ msg_id: msgId, rating: "down", reason: r, question, answer });
+      label.textContent = "Obrigado pelo retorno 🙏";
+      reasons.hidden = true;
+    });
+    reasons.appendChild(chip);
+  });
+
+  const setSelected = (rating) => {
+    up.classList.toggle("selected", rating === "up");
+    down.classList.toggle("selected", rating === "down");
+  };
+
+  up.addEventListener("click", () => {
+    rated[msgId] = "up";
+    persistRated();
+    setSelected("up");
+    reasons.hidden = true;
+    label.textContent = "Obrigado! 🙏";
+    sendFeedback({ msg_id: msgId, rating: "up", question, answer });
+  });
+  down.addEventListener("click", () => {
+    rated[msgId] = "down";
+    persistRated();
+    setSelected("down");
+    label.textContent = "O que faltou?";
+    reasons.hidden = false;
+    sendFeedback({ msg_id: msgId, rating: "down", question, answer });
+  });
+
+  bar.appendChild(label);
+  bar.appendChild(up);
+  bar.appendChild(down);
+  body.appendChild(bar);
+  body.appendChild(reasons);
+
+  if (rated[msgId]) setSelected(rated[msgId]);
+}
+
 // Redesenha as mensagens salvas ao abrir/recarregar a página.
 function restoreHistory() {
-  history.forEach((m) => addMessage(m.text, m.who));
+  history.forEach((m, idx) => {
+    const el = addMessage(m.text, m.who);
+    if (m.who === "bot") {
+      const q = idx > 0 && history[idx - 1].who === "user" ? history[idx - 1].text : "";
+      attachFeedback(el, m.id || newMsgId(), q, m.text);
+    }
+  });
 }
 restoreHistory();
 
@@ -116,7 +221,7 @@ function splitGraphemes(text) {
 // a sintaxe crua (**negrito**, listas) antes de "estalar" para o formato
 // final. O renderizador é incremental: quando o backend enviar tokens
 // reais, o mesmo código exibe cada um conforme chega, sem alteração.
-async function readStream(res, typing) {
+async function readStream(res, typing, question) {
   let received = ""; // texto já recebido do servidor
   let segments = []; // clusters de grafema de `received`
   let shown = 0; // clusters já revelados na tela
@@ -125,10 +230,19 @@ async function readStream(res, typing) {
   let doneReading = false;
   let revealPromise = null;
 
+  // rAF não dispara com a aba oculta (troca de aba/app no meio da resposta):
+  // nesse caso cai para setTimeout e mostra tudo de uma vez, sem animação.
+  const schedule = (fn) =>
+    document.hidden ? setTimeout(fn, 200) : requestAnimationFrame(fn);
+
   const reveal = () =>
     new Promise((resolve) => {
       const step = () => {
-        if (shown < segments.length) {
+        if (document.hidden) {
+          // Aba oculta: sem animação — exibe tudo o que já chegou.
+          shown = segments.length;
+          content.innerHTML = marked.parse(received);
+        } else if (shown < segments.length) {
           // Passo adaptativo: acompanha o ritmo do que chega sem travar.
           const pending = segments.length - shown;
           shown = Math.min(shown + Math.max(2, Math.ceil(pending / 40)), segments.length);
@@ -136,9 +250,9 @@ async function readStream(res, typing) {
           scrollToBottom();
         }
         if (shown >= segments.length && doneReading) return resolve();
-        requestAnimationFrame(step);
+        schedule(step);
       };
-      requestAnimationFrame(step);
+      schedule(step);
     });
 
   const handleEvent = (evt) => {
@@ -198,8 +312,10 @@ async function readStream(res, typing) {
     // (a revelação progressiva já deve ter chegado aqui sozinha).
     content.innerHTML = marked.parse(received);
     scrollToBottom();
-    history.push({ who: "bot", text: received });
+    const msgId = newMsgId();
+    history.push({ who: "bot", text: received, id: msgId });
     persistHistory();
+    attachFeedback(content, msgId, question, received);
   }
   if (errorText) {
     if (!content) typing.remove();
@@ -240,16 +356,18 @@ async function send(text) {
       typing.remove();
       if (data.usage) renderUsage(data.usage);
       if (data.reply) {
-        addMessage(data.reply, "bot");
-        history.push({ who: "bot", text: data.reply });
+        const c = addMessage(data.reply, "bot");
+        const mid = newMsgId();
+        history.push({ who: "bot", text: data.reply, id: mid });
         persistHistory();
+        attachFeedback(c, mid, text, data.reply);
       } else {
         addMessage(data.error || "Ocorreu um erro inesperado.", "bot");
       }
       return;
     }
 
-    await readStream(res, typing);
+    await readStream(res, typing, text);
   } catch (err) {
     typing.remove();
     addMessage("Não consegui me conectar ao servidor. Tente novamente.", "bot");
