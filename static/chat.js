@@ -101,15 +101,28 @@ function restoreHistory() {
 }
 restoreHistory();
 
+// Divide texto em clusters de grafema (Unicode-aware) para nunca cortar um
+// emoji multi-code-unit (ex: 🇮🇪, 👍🏽) ao meio durante a revelação.
+const segmenter =
+  typeof Intl !== "undefined" && Intl.Segmenter
+    ? new Intl.Segmenter("pt-BR", { granularity: "grapheme" })
+    : null;
+function splitGraphemes(text) {
+  return segmenter ? Array.from(segmenter.segment(text), (s) => s.segment) : Array.from(text);
+}
+
 // Lê o SSE do backend e revela o texto progressivamente (efeito "digitando").
-// O renderizador é incremental: quando o backend enviar tokens reais, o
-// mesmo código exibe cada um conforme chega, sem alteração.
+// O Markdown é re-parseado a cada quadro (não só no final) para não mostrar
+// a sintaxe crua (**negrito**, listas) antes de "estalar" para o formato
+// final. O renderizador é incremental: quando o backend enviar tokens
+// reais, o mesmo código exibe cada um conforme chega, sem alteração.
 async function readStream(res, typing) {
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
   let received = ""; // texto já recebido do servidor
-  let shown = 0; // caracteres já revelados na tela
+  let segments = []; // clusters de grafema de `received`
+  let shown = 0; // clusters já revelados na tela
   let content = null;
   let errorText = null;
   let doneReading = false;
@@ -118,14 +131,14 @@ async function readStream(res, typing) {
   const reveal = () =>
     new Promise((resolve) => {
       const step = () => {
-        if (shown < received.length) {
+        if (shown < segments.length) {
           // Passo adaptativo: acompanha o ritmo do que chega sem travar.
-          const pending = received.length - shown;
-          shown = Math.min(shown + Math.max(2, Math.ceil(pending / 40)), received.length);
-          content.textContent = received.slice(0, shown);
+          const pending = segments.length - shown;
+          shown = Math.min(shown + Math.max(2, Math.ceil(pending / 40)), segments.length);
+          content.innerHTML = marked.parse(segments.slice(0, shown).join(""));
           scrollToBottom();
         }
-        if (shown >= received.length && doneReading) return resolve();
+        if (shown >= segments.length && doneReading) return resolve();
         requestAnimationFrame(step);
       };
       requestAnimationFrame(step);
@@ -153,6 +166,7 @@ async function readStream(res, typing) {
           content = addMessage("", "bot");
         }
         received += evt.text;
+        segments = splitGraphemes(received);
         if (!revealPromise) revealPromise = reveal();
       } else if (evt.type === "done") {
         if (evt.usage) renderUsage(evt.usage);
@@ -166,7 +180,8 @@ async function readStream(res, typing) {
   if (revealPromise) await revealPromise;
 
   if (content && received) {
-    // Markdown só no final — parsear texto parcial quebraria o HTML.
+    // Parse final: garantia de que o texto completo está renderizado
+    // (a revelação progressiva já deve ter chegado aqui sozinha).
     content.innerHTML = marked.parse(received);
     scrollToBottom();
     history.push({ who: "bot", text: received });
