@@ -117,9 +117,6 @@ function splitGraphemes(text) {
 // final. O renderizador é incremental: quando o backend enviar tokens
 // reais, o mesmo código exibe cada um conforme chega, sem alteração.
 async function readStream(res, typing) {
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
   let received = ""; // texto já recebido do servidor
   let segments = []; // clusters de grafema de `received`
   let shown = 0; // clusters já revelados na tela
@@ -144,37 +141,54 @@ async function readStream(res, typing) {
       requestAnimationFrame(step);
     });
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    let idx;
-    while ((idx = buffer.indexOf("\n\n")) !== -1) {
-      const block = buffer.slice(0, idx);
-      buffer = buffer.slice(idx + 2);
-      const line = block.split("\n").find((l) => l.startsWith("data:"));
-      if (!line) continue;
-      let evt;
-      try {
-        evt = JSON.parse(line.slice(5));
-      } catch (e) {
-        continue;
+  const handleEvent = (evt) => {
+    if (evt.type === "token" && evt.text) {
+      if (!content) {
+        typing.remove();
+        content = addMessage("", "bot");
       }
-      if (evt.type === "token" && evt.text) {
-        if (!content) {
-          typing.remove();
-          content = addMessage("", "bot");
-        }
-        received += evt.text;
-        segments = splitGraphemes(received);
-        if (!revealPromise) revealPromise = reveal();
-      } else if (evt.type === "done") {
-        if (evt.usage) renderUsage(evt.usage);
-      } else if (evt.type === "error") {
-        errorText = evt.error || "Ocorreu um erro inesperado.";
-        if (evt.usage) renderUsage(evt.usage);
+      received += evt.text;
+      segments = splitGraphemes(received);
+      if (!revealPromise) revealPromise = reveal();
+    } else if (evt.type === "done") {
+      if (evt.usage) renderUsage(evt.usage);
+    } else if (evt.type === "error") {
+      errorText = evt.error || "Ocorreu um erro inesperado.";
+      if (evt.usage) renderUsage(evt.usage);
+    }
+  };
+
+  const handleBlock = (block) => {
+    const line = block.split("\n").find((l) => l.startsWith("data:"));
+    if (!line) return;
+    let evt;
+    try {
+      evt = JSON.parse(line.slice(5));
+    } catch (e) {
+      return;
+    }
+    handleEvent(evt);
+  };
+
+  if (res.body && res.body.getReader) {
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let idx;
+      while ((idx = buffer.indexOf("\n\n")) !== -1) {
+        handleBlock(buffer.slice(0, idx));
+        buffer = buffer.slice(idx + 2);
       }
     }
+  } else {
+    // WebViews sem suporte a leitura de stream (ex: navegador embutido do
+    // Instagram em aparelhos antigos): lê a resposta inteira e processa os
+    // mesmos blocos SSE de uma vez — a resposta aparece igual.
+    (await res.text()).split("\n\n").forEach(handleBlock);
   }
   doneReading = true;
   if (revealPromise) await revealPromise;

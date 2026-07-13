@@ -144,9 +144,13 @@ def _stream_langflow(payload: dict, ip: str):
             "usage": usage_snapshot(ip),
         })
     except requests.RequestException as exc:
+        # Detalhe técnico só no log do servidor — nunca na tela do usuário
+        # (a mensagem da exceção expõe URL interna e o id do flow).
+        app.logger.warning("Falha no stream do Langflow: %s", exc)
         yield _sse({
             "type": "error",
-            "error": f"Falha ao falar com o Langflow: {exc}",
+            "error": "Não consegui falar com a assistente agora. "
+            "Tente novamente em instantes.",
             "usage": usage_snapshot(ip),
         })
     except (KeyError, IndexError, ValueError, TypeError):
@@ -394,10 +398,14 @@ def chat():
         resp.raise_for_status()
         reply = extract_reply(resp.json())
     except requests.RequestException as exc:
+        # Detalhe técnico só no log — a mensagem da exceção expõe URL
+        # interna e o id do flow.
+        app.logger.warning("Falha ao falar com o Langflow: %s", exc)
         return (
             jsonify(
                 {
-                    "error": f"Falha ao falar com o Langflow: {exc}",
+                    "error": "Não consegui falar com a assistente agora. "
+                    "Tente novamente em instantes.",
                     "usage": usage_snapshot(ip),
                 }
             ),
