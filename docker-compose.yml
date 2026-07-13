@@ -13,14 +13,22 @@ services:
     # FASE 2: trocar AUTO_LOGIN para false e adicionar LANGFLOW_SUPERUSER,
     # LANGFLOW_SUPERUSER_PASSWORD e LANGFLOW_SECRET_KEY (exige reemitir a API key).
     image: langflowai/langflow:1.9.3
+    # O container roda como usuário não-root (uid 1000). Por padrão o
+    # Langflow grava cache/config em $HOME (que sem esta variável é
+    # /app/data, FORA do volume) e o banco SQLite ainda pior: dentro do
+    # próprio pacote instalado do venv. Nenhum dos dois era coberto pelo
+    # volume — qualquer recreate apagava flow, prompt, RAG e histórico
+    # (foi o que aconteceu em 2026-07-13). Fixando os dois abaixo, tudo
+    # fica dentro do volume persistido.
     volumes:
-      - langflow_data:/root/.cache/langflow
+      - langflow_data:/data/langflow
     environment:
       - LANGFLOW_AUTO_LOGIN=true
+      - HOME=/data/langflow
+      - LANGFLOW_DATABASE_URL=sqlite:////data/langflow/langflow.db
       # Secret key ESTÁVEL (do .env). Sem isso o Langflow regenera o secret
       # a cada recreate do container e invalida as API keys guardadas no
-      # banco (o arquivo do secret auto-gerado vive fora do volume) —
-      # foi exatamente o que derrubou o /chat em 2026-07-13.
+      # banco — foi a segunda causa do incidente de 2026-07-13.
       - LANGFLOW_SECRET_KEY=${LANGFLOW_SECRET_KEY}
     restart: unless-stopped
     logging: *default-logging
