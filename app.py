@@ -3,6 +3,7 @@ import io
 import json
 import os
 import re
+import threading
 import time
 from datetime import datetime, timedelta, timezone
 
@@ -98,7 +99,7 @@ def _sse(obj: dict) -> str:
     return "data: " + json.dumps(obj, ensure_ascii=False) + "\n\n"
 
 
-def _stream_langflow(payload: dict, ip: str):
+def _stream_langflow(payload: dict, ip: str, session_id: str = "", user_id: str = ""):
     """Consome o run do Langflow em modo stream (NDJSON) e repassa como SSE.
 
     O Agent atual não emite eventos 'token' (o texto completo chega no
@@ -137,6 +138,7 @@ def _stream_langflow(payload: dict, ip: str):
                         reply = extract_reply(data.get("result") or {})
                         yield _sse({"type": "token", "text": reply})
                     yield _sse({"type": "done", "usage": usage_snapshot(ip)})
+                    schedule_lead_scoring(session_id, user_id)
                     return
         yield _sse({
             "type": "error",
@@ -384,7 +386,9 @@ def chat():
     # pelo Content-Type. Sem "stream", segue o caminho síncrono original.
     if body.get("stream"):
         return Response(
-            stream_with_context(_stream_langflow(langflow_payload, ip)),
+            stream_with_context(
+                _stream_langflow(langflow_payload, ip, session_id, user_id)
+            ),
             mimetype="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
@@ -423,6 +427,7 @@ def chat():
             502,
         )
 
+    schedule_lead_scoring(session_id, user_id)
     return jsonify({"reply": reply, "usage": usage_snapshot(ip)})
 
 
@@ -457,6 +462,132 @@ def feedback():
         return jsonify({"error": "Não foi possível registrar o feedback."}), 500
 
     return jsonify({"ok": True})
+
+
+# ── Classificação de leads (IA) ────────────────────────────────────────
+# Após cada troca de mensagens, uma thread de fundo pede à Claude (Haiku,
+# barata) um perfil estruturado do lead a partir da conversa e um score
+# quente/morno/frio. Sem ANTHROPIC_API_KEY no .env, fica desabilitado.
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+LEAD_SCORING_MODEL = os.environ.get("LEAD_SCORING_MODEL", "claude-haiku-4-5-20251001")
+LEAD_SCORES_FILE = os.path.join(DATA_DIR, "lead_scores.jsonl")
+
+_scoring_inflight = set()  # session_ids com classificação em andamento
+
+SCORING_SYSTEM = (
+    "Você classifica leads de uma assistente de intercâmbio (chatbot da "
+    "influenciadora Ananda). Receberá a transcrição de uma conversa entre "
+    "um visitante e a assistente. Responda APENAS com um objeto JSON, sem "
+    "markdown e sem texto extra, neste formato:\n"
+    '{"score": "quente"|"morno"|"frio", "destino": string|null, '
+    '"orcamento": string|null, "prazo": string|null, '
+    '"quer_agencia": boolean, "resumo": string}\n\n'
+    "Critérios do score:\n"
+    "- quente: intenção clara de fazer intercâmbio (fala em contratar, "
+    "pede próximos passos, menciona datas/orçamento concretos ou pede "
+    "contato com agência);\n"
+    "- morno: interesse real, mas ainda pesquisando (compara destinos, "
+    "pergunta custos gerais);\n"
+    "- frio: curiosidade genérica, estudo escolar ou fora do tema.\n"
+    "Campos: destino = país/cidade de interesse; orcamento = qualquer "
+    "menção a valores; prazo = quando pretende ir; quer_agencia = pediu "
+    "ou aceitaria contato comercial; resumo = 1 frase objetiva sobre o "
+    "momento do lead. Use null quando não houver informação."
+)
+
+
+def _score_lead(session_id: str, user_id: str) -> None:
+    """Roda em thread de fundo: lê a conversa no Langflow, pede à Claude o
+    perfil do lead e grava a classificação em lead_scores.jsonl."""
+    try:
+        messages, err = _fetch_messages(session_id)
+        if err or not messages:
+            return
+        lines = []
+        for m in messages[-24:]:
+            who = "Visitante" if m.get("sender") == "User" else "Assistente"
+            text = (m.get("text") or "").strip()
+            if text:
+                lines.append(f"{who}: {text}")
+        convo = "\n".join(lines)[-6000:]
+        if not convo:
+            return
+
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key": ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json",
+            },
+            json={
+                "model": LEAD_SCORING_MODEL,
+                "max_tokens": 300,
+                "system": SCORING_SYSTEM,
+                "messages": [{"role": "user", "content": convo}],
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
+        raw = resp.json()["content"][0]["text"]
+        # Tolera cercas de código e texto ao redor: fica só com o {...}.
+        raw = raw[raw.find("{"): raw.rfind("}") + 1]
+        data = json.loads(raw)
+
+        score = str(data.get("score") or "").lower()
+        if score not in ("quente", "morno", "frio"):
+            return
+        entry = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "session_id": session_id,
+            "user_id": user_id,
+            "score": score,
+            "destino": _clip(data.get("destino"), 80),
+            "orcamento": _clip(data.get("orcamento"), 80),
+            "prazo": _clip(data.get("prazo"), 80),
+            "quer_agencia": bool(data.get("quer_agencia")),
+            "resumo": _clip(data.get("resumo"), 200),
+            "n_msgs": len(messages),
+        }
+        with open(LEAD_SCORES_FILE, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception as exc:  # noqa: BLE001 — thread de fundo nunca propaga
+        app.logger.warning("Falha na classificação do lead: %s", exc)
+    finally:
+        _scoring_inflight.discard(session_id)
+
+
+def schedule_lead_scoring(session_id: str, user_id: str) -> None:
+    """Dispara a classificação em segundo plano (não atrasa a resposta)."""
+    if not ANTHROPIC_API_KEY or not session_id or not user_id:
+        return
+    if session_id in _scoring_inflight:
+        return
+    _scoring_inflight.add(session_id)
+    threading.Thread(
+        target=_score_lead, args=(session_id, user_id), daemon=True
+    ).start()
+
+
+def read_lead_scores() -> dict:
+    """Devolve user_id -> classificação mais recente (arquivo é append-only)."""
+    scores = {}
+    try:
+        with open(LEAD_SCORES_FILE, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    e = json.loads(line)
+                except ValueError:
+                    continue
+                uid = e.get("user_id")
+                if uid:
+                    scores[uid] = e  # a última linha do arquivo vence
+    except OSError:
+        pass
+    return scores
 
 
 # ── Painel administrativo (acesso restrito) ────────────────────────────
@@ -552,16 +683,39 @@ def _feedback_stats(items: list) -> dict:
     }
 
 
+_SCORE_RANK = {"quente": 0, "morno": 1, "frio": 2}
+
+
 @app.route("/admin")
 def admin():
     if not _admin_allowed():
         return "Não encontrado", 404
 
     query = (request.args.get("q") or "").strip()
+    score_filter = (request.args.get("score") or "").strip()
     all_leads = read_leads()
     total = len(all_leads)
 
+    # Anexa a classificação mais recente de cada lead (se houver).
+    scores = read_lead_scores()
+    for lead in all_leads:
+        lead["score_info"] = scores.get(lead.get("user_id"))
+
     leads = _filter_by_email(all_leads, query)
+    if score_filter in ("quente", "morno", "frio"):
+        leads = [
+            l for l in leads
+            if l.get("score_info") and l["score_info"].get("score") == score_filter
+        ]
+    elif score_filter == "sort":
+        # "Quentes primeiro": ordena por temperatura, preservando a
+        # recência dentro de cada grupo (sort estável do Python).
+        leads = sorted(
+            leads,
+            key=lambda l: _SCORE_RANK.get(
+                (l.get("score_info") or {}).get("score"), 3
+            ),
+        )
     filtered = len(leads)
 
     try:
@@ -579,6 +733,7 @@ def admin():
         total=total,
         filtered=filtered,
         query=query,
+        score_filter=score_filter,
         page=page,
         pages=pages,
     )
@@ -591,6 +746,7 @@ def admin_export():
 
     query = (request.args.get("q") or "").strip()
     leads = _filter_by_email(read_leads(), query)
+    scores = read_lead_scores()
 
     buf = io.StringIO()
     buf.write("﻿")  # BOM: faz o Excel abrir os acentos corretamente
@@ -599,8 +755,10 @@ def admin_export():
         "Data", "Nome", "Telefone", "E-mail", "Sessão",
         "Consentimento comunidade", "Consentimento agências",
         "Versão do consentimento",
+        "Score", "Destino", "Orçamento", "Prazo", "Quer agência", "Resumo",
     ])
     for lead in leads:
+        sc = scores.get(lead.get("user_id")) or {}
         writer.writerow([
             lead.get("ts_fmt", ""),
             lead.get("name", ""),
@@ -610,6 +768,12 @@ def admin_export():
             "sim" if lead.get("consent_community") else "não",
             "sim" if lead.get("consent_share_agencies") else "não",
             lead.get("consent_version", ""),
+            sc.get("score", ""),
+            sc.get("destino", ""),
+            sc.get("orcamento", ""),
+            sc.get("prazo", ""),
+            "sim" if sc.get("quer_agencia") else "",
+            sc.get("resumo", ""),
         ])
 
     filename = f"leads_{datetime.now(_BRT).strftime('%Y-%m-%d')}.csv"

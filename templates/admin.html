@@ -79,6 +79,20 @@
     .badge { font-size: 12px; padding: 2px 8px; border-radius: 6px; }
     .badge.yes { background: #1f3d2a; color: #4ade80; }
     .badge.no { background: #332a2d; color: #9a9aa3; }
+    .score { font-size: 12px; padding: 2px 10px; border-radius: 999px; cursor: default; }
+    .score.quente { background: #3d1f1f; color: #f87171; }
+    .score.morno { background: #3d331f; color: #fbbf24; }
+    .score.frio { background: #1f2b3d; color: #60a5fa; }
+    .scorefilters { display: flex; gap: 8px; flex-wrap: wrap; }
+    .scorefilters a {
+      font-size: 13px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid #38383c;
+      color: #ececec;
+      text-decoration: none;
+    }
+    .scorefilters a.active { background: #8b6df0; border-color: #8b6df0; color: #fff; }
     a { color: #8b6df0; }
     .muted { color: #9a9aa3; }
     .empty { color: #9a9aa3; padding: 48px 0; text-align: center; }
@@ -119,6 +133,19 @@
       </a>
     </div>
 
+    <div class="toolbar scorefilters">
+      <a href="/admin{% if query %}?q={{ query|urlencode }}{% endif %}"
+        class="{% if not score_filter %}active{% endif %}">Todos</a>
+      <a href="/admin?score=sort{% if query %}&q={{ query|urlencode }}{% endif %}"
+        class="{% if score_filter == 'sort' %}active{% endif %}">Quentes primeiro</a>
+      <a href="/admin?score=quente{% if query %}&q={{ query|urlencode }}{% endif %}"
+        class="{% if score_filter == 'quente' %}active{% endif %}">🔥 Quentes</a>
+      <a href="/admin?score=morno{% if query %}&q={{ query|urlencode }}{% endif %}"
+        class="{% if score_filter == 'morno' %}active{% endif %}">🌤️ Mornos</a>
+      <a href="/admin?score=frio{% if query %}&q={{ query|urlencode }}{% endif %}"
+        class="{% if score_filter == 'frio' %}active{% endif %}">❄️ Frios</a>
+    </div>
+
     {% if leads %}
     <div class="table-wrap">
       <table>
@@ -126,6 +153,7 @@
           <tr>
             <th>Data</th>
             <th>Nome</th>
+            <th>Score</th>
             <th>Telefone</th>
             <th>E-mail</th>
             <th>Comunidade</th>
@@ -138,6 +166,15 @@
           <tr>
             <td class="muted">{{ lead.ts_fmt }}</td>
             <td>{{ lead.name }}</td>
+            <td>
+              {% if lead.score_info %}
+              {% set s = lead.score_info %}
+              <span class="score {{ s.score }}"
+                title="{{ s.resumo }}{% if s.destino %} · Destino: {{ s.destino }}{% endif %}{% if s.orcamento %} · Orçamento: {{ s.orcamento }}{% endif %}{% if s.prazo %} · Prazo: {{ s.prazo }}{% endif %}{% if s.quer_agencia %} · Quer agência{% endif %}">
+                {% if s.score == 'quente' %}🔥 quente{% elif s.score == 'morno' %}🌤️ morno{% else %}❄️ frio{% endif %}
+              </span>
+              {% else %}<span class="muted">—</span>{% endif %}
+            </td>
             <td>{{ lead.phone }}</td>
             <td>{{ lead.email }}</td>
             <td>
