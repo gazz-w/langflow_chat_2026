@@ -468,7 +468,11 @@ def feedback():
 # Após cada troca de mensagens, uma thread de fundo pede à Claude (Haiku,
 # barata) um perfil estruturado do lead a partir da conversa e um score
 # quente/morno/frio. Sem ANTHROPIC_API_KEY no .env, fica desabilitado.
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+# Aceita os dois nomes de variável (o padrão e o usado no .env do projeto).
+ANTHROPIC_API_KEY = (
+    os.environ.get("ANTHROPIC_API_KEY")
+    or os.environ.get("CLAUDE_API_KEY_NEW", "")
+)
 LEAD_SCORING_MODEL = os.environ.get("LEAD_SCORING_MODEL", "claude-haiku-4-5-20251001")
 LEAD_SCORES_FILE = os.path.join(DATA_DIR, "lead_scores.jsonl")
 
