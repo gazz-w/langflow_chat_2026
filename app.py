@@ -20,6 +20,8 @@ from flask import (
 from limits import RateLimitItemPerDay, RateLimitItemPerHour, storage, strategies
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+from media_kit import media_kit_bp
+
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 LANGFLOW_BASE_URL = os.environ["LANGFLOW_BASE_URL"]
@@ -35,6 +37,7 @@ app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 # o IP real do cliente (header X-Forwarded-For) em vez do IP do container.
 # Se um dia ligar o proxy da Cloudflare (nuvem laranja), mudar x_for para 2.
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
+app.register_blueprint(media_kit_bp)
 
 # ── Rate limiting (controle de abuso por IP) ───────────────────────────
 # Storage compartilhado entre os workers do gunicorn. Em produção usa

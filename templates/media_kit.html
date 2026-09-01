@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="mk-no-js">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="Conheça Ananda: criadora de conteúdo sobre lifestyle, viagens, relacionamentos e vida fora do Brasil. Histórias autênticas, informação e conexão para marcas.">
+  <meta name="theme-color" content="#f7f1e8">
+  <link rel="canonical" href="https://viajandocomananda.com/media-kit">
+
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:title" content="Media Kit | Ananda">
+  <meta property="og:description" content="Histórias que conectam. Experiências que inspiram.">
+  <meta property="og:url" content="https://viajandocomananda.com/media-kit">
+  <meta property="og:image"
+    content="https://viajandocomananda.com{{ url_for('static', filename='media-kit/hero-editorial.jpg') }}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <title>Media Kit | Ananda — Lifestyle, viagens e vida fora do Brasil</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='media-kit.css') }}">
+  <script>
+    document.documentElement.classList.remove('mk-no-js');
+    document.documentElement.classList.add('mk-js');
+  </script>
+</head>
+
+<body class="media-kit-page">
+  <a class="mk-skip-link" href="#conteudo">Pular para o conteúdo</a>
+
+  <header class="mk-header" data-header>
+    <div class="mk-container mk-header__inner">
+      <a class="mk-brand" href="#inicio" aria-label="Ananda — voltar ao início">
+        <span class="mk-brand__name">Ananda</span>
+        <span class="mk-brand__tag">Media Kit</span>
+      </a>
+
+      <button class="mk-menu-button" type="button" aria-expanded="false" aria-controls="mk-nav"
+        aria-label="Abrir menu" data-menu-button>
+        <span></span><span></span>
+      </button>
+
+      <nav class="mk-nav" id="mk-nav" aria-label="Navegação principal" data-nav>
+        <a href="#sobre">Sobre</a>
+        <a href="#impacto">Impacto</a>
+        <a href="#historias">Histórias</a>
+        <a href="#parcerias">Parcerias</a>
+        <a class="mk-button mk-button--small" href="mailto:{{ contact_email }}?subject={{ email_subject }}"
+          data-event="media_kit_email_click">Vamos conversar</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="conteudo">
+    <section class="mk-hero" id="inicio" aria-labelledby="hero-title">
+      <div class="mk-container mk-hero__grid">
+        <div class="mk-hero__content" data-reveal>
+          <p class="mk-eyebrow"><span></span> Criadora de conteúdo &amp; storyteller</p>
+          <h1 id="hero-title">Histórias que <em>conectam.</em><br>Experiências que inspiram.</h1>
+          <p class="mk-hero__lead">
+            Lifestyle, viagens, relacionamentos e vida fora do Brasil contados com autenticidade,
+            emoção e informação que faz diferença.
+          </p>
+          <div class="mk-hero__actions">
+            <a class="mk-button" href="mailto:{{ contact_email }}?subject={{ email_subject }}"
+              data-event="media_kit_email_click">
+              Criar uma parceria
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </a>
+            <a class="mk-text-link" href="#impacto">Conheça meu impacto <span aria-hidden="true">↓</span></a>
+          </div>
+        </div>
+
+        <div class="mk-hero__visual" data-reveal data-reveal-delay="1">
+          <div class="mk-hero__art">
+            <img src="{{ url_for('static', filename='media-kit/hero-editorial.jpg') }}"
+              srcset="{{ url_for('static', filename='media-kit/hero-editorial-480.jpg') }} 480w,
+                      {{ url_for('static', filename='media-kit/hero-editorial-720.jpg') }} 720w,
+                      {{ url_for('static', filename='media-kit/hero-editorial.jpg') }} 1120w"
+              sizes="(max-width: 640px) calc(100vw - 62px), (max-width: 820px) 520px, 42vw"
+              width="1120" height="1400" alt="" fetchpriority="high">
+            <span class="mk-hero__stamp" aria-hidden="true">Do Brasil<br>para o mundo</span>
+            <span class="mk-hero__note" aria-hidden="true">um novo capítulo ↗</span>
+          </div>
+
+          {% if media.metrics %}
+          <div class="mk-hero__metrics" aria-label="Principais indicadores">
+            {% for metric in media.metrics[:2] %}
+            <article class="mk-hero-metric">
+              <strong data-counter data-value="{{ metric.value }}" data-display="{{ metric.display_value }}">
+                {{ metric.display_value }}
+              </strong>
+              <span>{{ metric.label }}</span>
+              {% if metric.period %}<small>{{ metric.period }}</small>{% endif %}
+            </article>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="mk-hero__ticker" aria-label="Temas do conteúdo">
+        <div>
+          <span>Storytelling</span><i>✦</i><span>Lifestyle</span><i>✦</i><span>Vida fora</span><i>✦</i>
+          <span>Viagens</span><i>✦</i><span>Relacionamentos</span><i>✦</i><span>Autenticidade</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="mk-section mk-about" id="sobre" aria-labelledby="about-title">
+      <div class="mk-container">
+        <div class="mk-about__intro" data-reveal>
+          <p class="mk-kicker">Muito além dos números</p>
+          <h2 id="about-title">Não é só sobre mudar de país.<br>É sobre ter coragem para viver uma <em>nova história.</em></h2>
+        </div>
+
+        <div class="mk-about__body">
+          <p class="mk-about__opening" data-reveal>
+            Eu sou a Ananda. Transformo experiências reais em conteúdos que provocam sentimentos,
+            despertam possibilidades e entregam algo útil para quem está do outro lado da tela.
+          </p>
+          <div class="mk-about__copy" data-reveal data-reveal-delay="1">
+            <p>
+              Depois de 11 anos de relacionamento, um casamento e muitas escolhas importantes,
+              troquei o caminho esperado por um sonho de infância: começar uma nova vida na Irlanda.
+            </p>
+            <p>
+              Divido essa jornada sem romantizar os desafios — com diversão, clareza e a proximidade
+              de quem conversa com uma amiga. É dessa verdade que nasce a conexão com a minha comunidade.
+            </p>
+          </div>
+        </div>
+
+        <div class="mk-chapters" aria-label="Capítulos da história da Ananda">
+          <article data-reveal>
+            <span>01</span>
+            <strong>11 anos</strong>
+            <p>Uma história de amor, crescimento e escolhas construídas a dois.</p>
+          </article>
+          <article data-reveal data-reveal-delay="1">
+            <span>02</span>
+            <strong>Um casamento</strong>
+            <p>O começo oficial de um capítulo que já estava sendo escrito há muito tempo.</p>
+          </article>
+          <article data-reveal data-reveal-delay="2">
+            <span>03</span>
+            <strong>Uma nova vida</strong>
+            <p>Aos 30, a decisão de mudar de país e transformar um sonho em realidade.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="mk-section mk-impact" id="impacto" aria-labelledby="impact-title">
+      <div class="mk-container">
+        <div class="mk-section-heading mk-section-heading--split" data-reveal>
+          <div>
+            <p class="mk-kicker mk-kicker--light">Impacto que atravessa a tela</p>
+            <h2 id="impact-title">Uma comunidade em movimento.</h2>
+          </div>
+          <p>
+            O conteúdo alcança pessoas para além da base de seguidores e transforma vivências
+            pessoais em conversas, compartilhamentos e identificação.
+          </p>
+        </div>
+
+        {% if media.metrics %}
+        <div class="mk-impact__metrics">
+          {% for metric in media.metrics %}
+          <article class="mk-impact-metric" data-reveal data-reveal-delay="{{ loop.index0 % 3 }}">
+            <span class="mk-impact-metric__index">0{{ loop.index }}</span>
+            <strong data-counter data-value="{{ metric.value }}" data-display="{{ metric.display_value }}">
+              {{ metric.display_value }}
+            </strong>
+            <h3>{{ metric.label }}</h3>
+            {% if metric.period %}<p>{{ metric.period }}</p>{% endif %}
+          </article>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if media.updated_display %}
+        <p class="mk-data-date">Dados atualizados em {{ media.updated_display }}.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    {% set groups = media.audience_groups %}
+    {% if groups.gender or groups.age or groups.country %}
+    <section class="mk-section mk-audience" id="audiencia" aria-labelledby="audience-title">
+      <div class="mk-container">
+        <div class="mk-section-heading" data-reveal>
+          <p class="mk-kicker">Quem acompanha</p>
+          <h2 id="audience-title">Uma audiência que se reconhece nas histórias.</h2>
+          <p>Dados demográficos extraídos do Instagram Insights e atualizados manualmente.</p>
+        </div>
+
+        <div class="mk-audience__grid">
+          {% for dimension, title in [('gender', 'Gênero'), ('age', 'Faixa etária'), ('country', 'Principais países')] %}
+          {% if groups[dimension] %}
+          <article class="mk-audience-card" data-reveal>
+            <h3>{{ title }}</h3>
+            <div class="mk-bars">
+              {% for item in groups[dimension] %}
+              <div class="mk-bar">
+                <div class="mk-bar__label"><span>{{ item.label }}</span><strong>{{ item.display_value }}</strong></div>
+                <div class="mk-bar__track" role="img" aria-label="{{ item.label }}: {{ item.display_value }}">
+                  <span style="--bar-value: {{ item.bar_value }}%"></span>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </article>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    <section class="mk-section mk-storytelling" aria-labelledby="storytelling-title">
+      <div class="mk-container">
+        <div class="mk-section-heading mk-section-heading--split" data-reveal>
+          <div>
+            <p class="mk-kicker">Meu jeito de criar</p>
+            <h2 id="storytelling-title">Conteúdo que começa na vida real.</h2>
+          </div>
+          <p>
+            Cada história nasce de uma experiência verdadeira, encontra um sentimento universal e
+            entrega informação capaz de permanecer com a audiência.
+          </p>
+        </div>
+
+        <ol class="mk-story-flow">
+          <li data-reveal><span>01</span><strong>Vivência</strong><p>A experiência acontece de verdade.</p></li>
+          <li data-reveal data-reveal-delay="1"><span>02</span><strong>Emoção</strong><p>Encontro o sentimento por trás dela.</p></li>
+          <li data-reveal data-reveal-delay="2"><span>03</span><strong>História</strong><p>Transformo o momento em narrativa.</p></li>
+          <li data-reveal><span>04</span><strong>Utilidade</strong><p>Entrego informação ou perspectiva.</p></li>
+          <li data-reveal data-reveal-delay="1"><span>05</span><strong>Conexão</strong><p>A comunidade se reconhece e participa.</p></li>
+        </ol>
+
+        <blockquote class="mk-manifesto" data-reveal>
+          <span aria-hidden="true">“</span>
+          <p>A marca não interrompe a história.<br><em>Ela passa a fazer parte dela.</em></p>
+        </blockquote>
+      </div>
+    </section>
+
+    <section class="mk-section mk-stories" id="historias" aria-labelledby="stories-title">
+      <div class="mk-container">
+        <div class="mk-section-heading" data-reveal>
+          <p class="mk-kicker">Histórias que conectam</p>
+          <h2 id="stories-title">Capítulos reais.<br>Sentimentos universais.</h2>
+        </div>
+
+        <div class="mk-story-topics">
+          <article class="mk-topic mk-topic--coral" data-reveal>
+            <span>Amor &amp; parceria</span><h3>11 anos escolhendo crescer juntos</h3>
+            <p>Relacionamento, casamento e tudo que existe entre os grandes momentos.</p>
+          </article>
+          <article class="mk-topic mk-topic--cobalt" data-reveal data-reveal-delay="1">
+            <span>Novos caminhos</span><h3>Quando nossos amigos tiveram filhos e nós mudamos de país</h3>
+            <p>Sobre respeitar tempos diferentes e construir a vida que faz sentido para você.</p>
+          </article>
+          <article class="mk-topic mk-topic--cream" data-reveal>
+            <span>Coragem</span><h3>A crise dos 30 também pode ser um começo</h3>
+            <p>Adversidades, escolhas e a coragem de transformar incerteza em movimento.</p>
+          </article>
+          <article class="mk-topic mk-topic--lime" data-reveal data-reveal-delay="1">
+            <span>Amizade</span><h3>Do ensino médio para o intercâmbio na Irlanda</h3>
+            <p>Quinze anos de amizade e um sonho compartilhado do outro lado do oceano.</p>
+          </article>
+          <article class="mk-topic mk-topic--ink" data-reveal>
+            <span>Realização</span><h3>O sonho de infância que virou endereço</h3>
+            <p>Vida fora do Brasil com informação, encantamento e desafios sem filtro.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    {% if media.content %}
+    <section class="mk-section mk-highlights" aria-labelledby="highlights-title">
+      <div class="mk-container">
+        <div class="mk-section-heading mk-section-heading--with-controls" data-reveal>
+          <div>
+            <p class="mk-kicker">Conteúdos em destaque</p>
+            <h2 id="highlights-title">Histórias que foram mais longe.</h2>
+          </div>
+          <div class="mk-carousel-controls" aria-label="Controles dos conteúdos">
+            <button type="button" data-carousel-button="previous" aria-label="Conteúdo anterior">←</button>
+            <button type="button" data-carousel-button="next" aria-label="Próximo conteúdo">→</button>
+          </div>
+        </div>
+
+        <div class="mk-content-carousel" data-carousel tabindex="0" aria-label="Conteúdos em destaque">
+          {% for item in media.content %}
+          <article class="mk-content-card" data-category="{{ item.category }}">
+            <div class="mk-content-card__visual">
+              {% if item.asset %}
+              <img src="{{ url_for('static', filename='media-kit/' ~ item.asset) }}" alt="Capa: {{ item.title }}"
+                loading="lazy" width="720" height="900">
+              {% else %}
+              <span class="mk-content-card__placeholder" aria-hidden="true">{{ '%02d'|format(loop.index) }}</span>
+              {% endif %}
+              <span class="mk-content-card__tag">
+                {% if item.category == 'alcance' %}Alcance{% elif item.category == 'ambos' %}Conexão + alcance{% else %}Conexão{% endif %}
+              </span>
+            </div>
+            <div class="mk-content-card__body">
+              <h3>{{ item.title }}</h3>
+              {% if item.story %}<p>{{ item.story }}</p>{% endif %}
+              {% if item.metrics %}
+              <dl class="mk-content-card__metrics">
+                {% for metric in item.metrics[:3] %}
+                <div><dt>{{ metric.label }}</dt><dd>{{ '{:,.0f}'.format(metric.value).replace(',', '.') }}</dd></div>
+                {% endfor %}
+              </dl>
+              {% endif %}
+              {% if item.post_url %}
+              <a href="{{ item.post_url }}" target="_blank" rel="noopener noreferrer"
+                data-event="media_kit_post_click">Ver conteúdo no Instagram <span aria-hidden="true">↗</span></a>
+              {% endif %}
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    {% if media.quotes %}
+    <section class="mk-section mk-community" aria-labelledby="community-title">
+      <div class="mk-container">
+        <div class="mk-section-heading" data-reveal>
+          <p class="mk-kicker mk-kicker--light">A voz da comunidade</p>
+          <h2 id="community-title">Quando uma história encontra outra.</h2>
+        </div>
+        <div class="mk-quote-grid">
+          {% for item in media.quotes[:6] %}
+          <figure data-reveal data-reveal-delay="{{ loop.index0 % 3 }}">
+            <blockquote>“{{ item.quote }}”</blockquote>
+            <figcaption>{{ item.author_display }} · {{ item.context }}</figcaption>
+          </figure>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    <section class="mk-section mk-partnerships" id="parcerias" aria-labelledby="partnerships-title">
+      <div class="mk-container">
+        <div class="mk-section-heading mk-section-heading--split" data-reveal>
+          <div>
+            <p class="mk-kicker">Sua marca na história</p>
+            <h2 id="partnerships-title">Parcerias com contexto, verdade e propósito.</h2>
+          </div>
+          <p>
+            Produtos e serviços entram de forma natural na narrativa — como soluções para situações
+            que a audiência já vive, deseja ou está se preparando para viver.
+          </p>
+        </div>
+
+        <div class="mk-integration-grid">
+          <article data-reveal>
+            <span>01</span>
+            <h3>Solução dentro de uma experiência</h3>
+            <p>A marca resolve uma necessidade real em uma viagem, mudança ou desafio cotidiano.</p>
+          </article>
+          <article data-reveal data-reveal-delay="1">
+            <span>02</span>
+            <h3>Produto dentro da rotina</h3>
+            <p>Uso autêntico, demonstração clara e presença coerente no lifestyle da Ananda.</p>
+          </article>
+          <article data-reveal data-reveal-delay="2">
+            <span>03</span>
+            <h3>Marca como parte da transformação</h3>
+            <p>Uma parceria que ajuda a viabilizar um novo capítulo e inspira a comunidade.</p>
+          </article>
+        </div>
+
+        <div class="mk-brand-fit" data-reveal>
+          <div>
+            <p class="mk-kicker">Afinidade de marca</p>
+            <h3>Onde podemos criar juntos</h3>
+          </div>
+          <ul aria-label="Categorias de marcas">
+            <li>Viagens</li><li>Seguros</li><li>Beleza</li><li>Autocuidado</li>
+            <li>Produtos de viagem</li><li>Tecnologia</li><li>Organização</li><li>Facilidades</li>
+          </ul>
+        </div>
+
+        <div class="mk-formats" data-reveal>
+          <p>Formatos possíveis</p>
+          <ul>
+            <li>Reels</li><li>Stories</li><li>Carrosséis</li><li>UGC</li><li>Reviews</li>
+            <li>Experiências</li><li>Embaixadora</li><li>Campanhas de longo prazo</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    {% if media.testimonials %}
+    <section class="mk-section mk-testimonials" aria-labelledby="testimonials-title">
+      <div class="mk-container">
+        <div class="mk-section-heading" data-reveal>
+          <p class="mk-kicker">Experiências com marcas</p>
+          <h2 id="testimonials-title">Boas histórias também são construídas em parceria.</h2>
+        </div>
+        <div class="mk-testimonial-grid">
+          {% for item in media.testimonials %}
+          <figure data-reveal>
+            <blockquote>“{{ item.quote }}”</blockquote>
+            <figcaption>
+              {% if item.logo_asset %}<img src="{{ url_for('static', filename='media-kit/' ~ item.logo_asset) }}"
+                alt="" loading="lazy">{% endif %}
+              <span><strong>{{ item.author }}</strong><small>{{ item.role }}{% if item.company %} · {{ item.company }}{% endif %}</small></span>
+            </figcaption>
+          </figure>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    <section class="mk-contact" id="contato" aria-labelledby="contact-title">
+      <div class="mk-container mk-contact__inner" data-reveal>
+        <p class="mk-kicker mk-kicker--light">Vamos conversar</p>
+        <h2 id="contact-title">Vamos criar o<br><em>próximo capítulo?</em></h2>
+        <p>
+          Tem uma marca, produto ou experiência que combina com essa história?
+          Conte sua ideia e vamos construir uma parceria com significado.
+        </p>
+        <div class="mk-contact__actions">
+          <a class="mk-button mk-button--light" href="mailto:{{ contact_email }}?subject={{ email_subject }}"
+            data-event="media_kit_email_click">Enviar proposta por e-mail <span aria-hidden="true">↗</span></a>
+          <button class="mk-copy-email" type="button" data-copy-email="{{ contact_email }}">
+            <span>{{ contact_email }}</span>
+            <small data-copy-label>copiar</small>
+          </button>
+        </div>
+        <p class="mk-copy-status" role="status" aria-live="polite" data-copy-status></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="mk-footer">
+    <div class="mk-container mk-footer__inner">
+      <div>
+        <a class="mk-brand mk-brand--footer" href="#inicio"><span class="mk-brand__name">Ananda</span></a>
+        <p>Histórias reais, emoções genuínas e conteúdo que transforma.</p>
+      </div>
+      <div class="mk-footer__links">
+        {% if instagram_url %}
+        <a href="{{ instagram_url }}" target="_blank" rel="noopener noreferrer"
+          data-event="media_kit_instagram_click">Instagram ↗</a>
+        {% endif %}
+        <a href="mailto:{{ contact_email }}?subject={{ email_subject }}">E-mail</a>
+        <a href="#inicio">Voltar ao topo ↑</a>
+      </div>
+      <small>© 2026 Ananda. Todos os direitos reservados.</small>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='media-kit.js') }}" defer></script>
+</body>
+
+</html>

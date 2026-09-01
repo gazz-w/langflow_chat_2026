@@ -1,0 +1,28 @@
+{
+  "metrics": [
+    {
+      "key": "followers",
+      "value": 11400,
+      "display_value": "11,4 mil",
+      "label": "seguidores",
+      "period": "audiência atual",
+      "updated_at": "2026-09-01",
+      "updated_display": "setembro de 2026",
+      "order": 1
+    },
+    {
+      "key": "views_90d",
+      "value": 2700000,
+      "display_value": "2,7 milhões",
+      "label": "visualizações",
+      "period": "nos últimos 90 dias",
+      "updated_at": "2026-09-01",
+      "updated_display": "setembro de 2026",
+      "order": 2
+    }
+  ],
+  "audience": [],
+  "content": [],
+  "quotes": [],
+  "testimonials": []
+}
