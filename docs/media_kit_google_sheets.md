@@ -13,6 +13,7 @@ Use exatamente estes nomes:
 - `conteudos`
 - `comentarios`
 - `depoimentos`
+- `cases`
 
 Não coloque nessa planilha informações privadas, contatos de seguidores,
 rascunhos, preços ou dados que não possam aparecer publicamente.
@@ -83,6 +84,21 @@ quote,author,role,company,logo_asset,case_url,order,active
 
 Use somente depoimentos e logos autorizados.
 
+### cases
+
+```csv
+partner,category,objective,format,story,result_1_value,result_1_label,result_2_value,result_2_label,period,testimonial_quote,testimonial_author,asset,post_url,order,active
+Tripwai,Agência de intercâmbio,Gerar leads qualificados para fechamento de intercâmbio,1 Reels por mês com storytelling,"Produzo 1 Reels por mês para a Tripwai...",47,leads gerados,2,intercâmbios fechados,em menos de 3 meses,,,,,1,TRUE
+```
+
+Cada linha vira um card de case na seção "Resultado, não só alcance". Só
+`partner`, `story` e `active=TRUE` são obrigatórios — os demais campos somem
+da página sozinhos quando ficam vazios. `testimonial_quote`/
+`testimonial_author` só devem ser preenchidos com uma citação real e
+autorizada pela marca parceira — **nunca invente uma fala em nome de um
+parceiro**. `asset` segue a mesma regra de `conteudos` (caminho dentro de
+`static/media-kit/`); sem imagem, o card mostra as iniciais do parceiro.
+
 ## 3. Publique cada guia
 
 No Google Sheets:
@@ -91,7 +107,7 @@ No Google Sheets:
 2. selecione uma guia por vez;
 3. selecione o formato CSV;
 4. publique e copie o link gerado;
-5. repita para as cinco guias.
+5. repita para as seis guias.
 
 ## 4. Configure o projeto
 
@@ -103,6 +119,7 @@ MEDIA_KIT_AUDIENCE_CSV_URL=https://...
 MEDIA_KIT_CONTENT_CSV_URL=https://...
 MEDIA_KIT_QUOTES_CSV_URL=https://...
 MEDIA_KIT_TESTIMONIALS_CSV_URL=https://...
+MEDIA_KIT_CASES_CSV_URL=https://...
 MEDIA_KIT_CACHE_SECONDS=600
 MEDIA_KIT_CONTACT_EMAIL=email-comercial@exemplo.com
 MEDIA_KIT_INSTAGRAM_URL=https://www.instagram.com/perfil/

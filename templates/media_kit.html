@@ -45,6 +45,7 @@
         <a href="#sobre">Sobre</a>
         <a href="#impacto">Impacto</a>
         <a href="#historias">Histórias</a>
+        {% if media.cases %}<a href="#cases">Cases</a>{% endif %}
         <a href="#parcerias">Parcerias</a>
         <a class="mk-button mk-button--small" href="mailto:{{ contact_email }}?subject={{ email_subject }}"
           data-event="media_kit_email_click">Planejar uma campanha</a>
@@ -397,6 +398,67 @@
             <blockquote>“{{ item.quote }}”</blockquote>
             <figcaption>{{ item.author_display }} · {{ item.context }}</figcaption>
           </figure>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    {% if media.cases %}
+    <section class="mk-section mk-cases" id="cases" aria-labelledby="cases-title">
+      <div class="mk-container">
+        <div class="mk-section-heading" data-reveal>
+          <p class="mk-kicker">Resultado, não só alcance</p>
+          <h2 id="cases-title">Parcerias que geraram negócio de verdade.</h2>
+        </div>
+
+        <div class="mk-case-grid">
+          {% for case in media.cases %}
+          <article class="mk-case-card" data-reveal>
+            <div class="mk-case-card__visual">
+              {% if case.asset %}
+              <img src="{{ url_for('static', filename='media-kit/' ~ case.asset) }}"
+                alt="Conteúdo da parceria com {{ case.partner }}" loading="lazy">
+              {% else %}
+              <span class="mk-case-card__placeholder" aria-hidden="true">{{ case.partner[:2]|upper }}</span>
+              {% endif %}
+            </div>
+            <div class="mk-case-card__body">
+              <p class="mk-case-card__partner">{{ case.partner }}{% if case.category %} · {{ case.category }}{% endif %}</p>
+              {% if case.objective %}<p class="mk-case-card__objective">{{ case.objective }}</p>{% endif %}
+              {% if case.format %}<p class="mk-case-card__format">{{ case.format }}</p>{% endif %}
+
+              <div class="mk-case-card__results">
+                {% if case.result_1_value %}
+                <div>
+                  <strong>{{ case.result_1_value }}</strong>
+                  <span>{{ case.result_1_label }}</span>
+                </div>
+                {% endif %}
+                {% if case.result_2_value %}
+                <div>
+                  <strong>{{ case.result_2_value }}</strong>
+                  <span>{{ case.result_2_label }}</span>
+                </div>
+                {% endif %}
+                {% if case.period %}<small>{{ case.period }}</small>{% endif %}
+              </div>
+
+              <p class="mk-case-card__story">{{ case.story }}</p>
+
+              {% if case.testimonial_quote %}
+              <blockquote class="mk-case-card__testimonial">
+                “{{ case.testimonial_quote }}”
+                {% if case.testimonial_author %}<cite>{{ case.testimonial_author }}</cite>{% endif %}
+              </blockquote>
+              {% endif %}
+
+              {% if case.post_url %}
+              <a href="{{ case.post_url }}" target="_blank" rel="noopener noreferrer"
+                data-event="media_kit_case_click">Ver conteúdo <span aria-hidden="true">↗</span></a>
+              {% endif %}
+            </div>
+          </article>
           {% endfor %}
         </div>
       </div>

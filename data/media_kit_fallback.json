@@ -87,5 +87,24 @@
   "audience": [],
   "content": [],
   "quotes": [],
-  "testimonials": []
+  "testimonials": [],
+  "cases": [
+    {
+      "partner": "Tripwai",
+      "category": "Agência de intercâmbio",
+      "objective": "Gerar leads qualificados para fechamento de intercâmbio junto à audiência da Ananda.",
+      "format": "1 Reels por mês, com storytelling",
+      "story": "Produzo 1 Reels por mês para a Tripwai, com storytelling que vende e engaja de verdade — não é publicidade genérica, é a mesma linguagem que uso pra contar minha própria história. Recebo relatos constantes de seguidoras dizendo que fecharam o intercâmbio e passaram a acompanhar a página depois de assistir aos vídeos.",
+      "result_1_value": "47",
+      "result_1_label": "leads gerados",
+      "result_2_value": "2",
+      "result_2_label": "intercâmbios fechados",
+      "period": "em menos de 3 meses",
+      "testimonial_quote": "",
+      "testimonial_author": "",
+      "asset": "",
+      "post_url": "",
+      "order": 1
+    }
+  ]
 }

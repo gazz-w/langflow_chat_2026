@@ -19,6 +19,13 @@ class MediaKitRouteTest(unittest.TestCase):
         self.assertIn("11,3 mil", response.get_data(as_text=True))
         self.assertIn("7,74%", response.get_data(as_text=True))
 
+    def test_media_kit_renders_tripwai_case(self):
+        body = self.client.get("/media-kit").get_data(as_text=True)
+
+        self.assertIn("Tripwai", body)
+        self.assertIn("47", body)
+        self.assertIn("leads gerados", body)
+
     def test_media_kit_is_isolated_from_chat_assets(self):
         body = self.client.get("/media-kit").get_data(as_text=True)
 

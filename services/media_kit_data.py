@@ -196,6 +196,32 @@ def _normalise_testimonial(row: dict) -> dict | None:
     }
 
 
+def _normalise_case(row: dict) -> dict | None:
+    partner = _text(row.get("partner"), 80)
+    story = _text(row.get("story"), 600)
+    if not partner or not story or not _active(row.get("active")):
+        return None
+    result_1 = _text(row.get("result_1_value"), 24)
+    result_2 = _text(row.get("result_2_value"), 24)
+    return {
+        "partner": partner,
+        "category": _text(row.get("category"), 80),
+        "objective": _text(row.get("objective"), 200),
+        "format": _text(row.get("format"), 200),
+        "story": story,
+        "result_1_value": result_1,
+        "result_1_label": _text(row.get("result_1_label"), 60),
+        "result_2_value": result_2,
+        "result_2_label": _text(row.get("result_2_label"), 60),
+        "period": _text(row.get("period"), 80),
+        "testimonial_quote": _text(row.get("testimonial_quote"), 400),
+        "testimonial_author": _text(row.get("testimonial_author"), 100),
+        "asset": _safe_asset(row.get("asset")),
+        "post_url": _safe_url(row.get("post_url")),
+        "order": _order(row.get("order")),
+    }
+
+
 _CHART_COLORS = ("var(--mk-coral)", "var(--mk-cobalt)", "var(--mk-lime)", "var(--mk-coral-dark)")
 
 
@@ -225,6 +251,7 @@ _NORMALISERS = {
     "content": _normalise_content,
     "quotes": _normalise_quote,
     "testimonials": _normalise_testimonial,
+    "cases": _normalise_case,
 }
 
 
@@ -243,7 +270,7 @@ class MediaKitDataService:
         except (OSError, ValueError, TypeError):
             return {
                 "metrics": [], "audience": [], "content": [],
-                "quotes": [], "testimonials": [],
+                "quotes": [], "testimonials": [], "cases": [],
             }
 
     @staticmethod
@@ -271,6 +298,7 @@ class MediaKitDataService:
                 "content": os.environ.get("MEDIA_KIT_CONTENT_CSV_URL", ""),
                 "quotes": os.environ.get("MEDIA_KIT_QUOTES_CSV_URL", ""),
                 "testimonials": os.environ.get("MEDIA_KIT_TESTIMONIALS_CSV_URL", ""),
+                "cases": os.environ.get("MEDIA_KIT_CASES_CSV_URL", ""),
             }
 
             for section, raw_url in urls.items():
@@ -299,6 +327,7 @@ class MediaKitDataService:
             data.setdefault("content", [])
             data.setdefault("quotes", [])
             data.setdefault("testimonials", [])
+            data.setdefault("cases", [])
             data["audience_groups"] = {
                 dimension: [
                     item for item in data["audience"]
