@@ -47,7 +47,7 @@
         <a href="#historias">Histórias</a>
         <a href="#parcerias">Parcerias</a>
         <a class="mk-button mk-button--small" href="mailto:{{ contact_email }}?subject={{ email_subject }}"
-          data-event="media_kit_email_click">Vamos conversar</a>
+          data-event="media_kit_email_click">Planejar uma campanha</a>
       </nav>
     </div>
   </header>
@@ -77,7 +77,7 @@
             <div class="mk-profile-card__actions">
               <a class="mk-button" href="mailto:{{ contact_email }}?subject={{ email_subject }}"
                 data-event="media_kit_email_click">
-                Falar sobre parceria
+                Planejar uma campanha
                 <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
                   <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round" />
@@ -98,29 +98,40 @@
           </article>
 
           {% if media.metrics %}
+          {% set featured = media.metrics | selectattr('highlight') | list %}
+          {% set supporting = media.metrics | rejectattr('highlight') | list %}
           <article class="mk-stats-card" id="impacto">
             <div class="mk-stats-card__head">
-              <h2>Insights &amp; Dados</h2>
+              <div>
+                <h2>Insights &amp; Dados</h2>
+                <p class="mk-stats-card__source">Dados do Instagram, atualizados manualmente</p>
+              </div>
               {% if media.updated_display %}<span class="mk-stats-card__updated">Atualizado em {{ media.updated_display }}</span>{% endif %}
             </div>
-            <div class="mk-stat-grid">
-              {% for metric in media.metrics %}
-              <div class="mk-stat-tile">
-                <span class="mk-stat-tile__icon" aria-hidden="true">
-                  {% if 'follow' in metric.key %}
-                  <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zM4 20a8 8 0 0116 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                  {% elif 'view' in metric.key %}
-                  <svg viewBox="0 0 24 24" width="18" height="18"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2" /></svg>
-                  {% elif 'like' in metric.key %}
-                  <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 20.5s-7.5-4.6-9.7-9.2C.7 7.6 2.6 4.5 6 4.2c2-.2 3.7.8 6 3 2.3-2.2 4-3.2 6-3 3.4.3 5.3 3.4 3.7 7.1C19.5 15.9 12 20.5 12 20.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>
-                  {% elif 'comment' in metric.key %}
-                  <svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 5h16v11H8l-4 4V5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>
-                  {% elif 'post' in metric.key %}
-                  <svg viewBox="0 0 24 24" width="18" height="18"><rect x="3" y="3" width="8" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="2" /><rect x="13" y="3" width="8" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="2" /><rect x="3" y="13" width="8" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="2" /><rect x="13" y="13" width="8" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="2" /></svg>
-                  {% else %}
-                  <svg viewBox="0 0 24 24" width="18" height="18"><path d="M3 17l6-6 4 4 8-9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                  {% endif %}
-                </span>
+
+            {% macro stat_icon(key) %}
+              {% if 'follow' in key %}
+              <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zM4 20a8 8 0 0116 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              {% elif 'view' in key %}
+              <svg viewBox="0 0 24 24" width="18" height="18"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2" /></svg>
+              {% elif 'like' in key %}
+              <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 20.5s-7.5-4.6-9.7-9.2C.7 7.6 2.6 4.5 6 4.2c2-.2 3.7.8 6 3 2.3-2.2 4-3.2 6-3 3.4.3 5.3 3.4 3.7 7.1C19.5 15.9 12 20.5 12 20.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>
+              {% elif 'comment' in key %}
+              <svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 5h16v11H8l-4 4V5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>
+              {% elif 'engagement' in key %}
+              <svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2" /><circle cx="12" cy="12" r="4.3" fill="none" stroke="currentColor" stroke-width="2" /><circle cx="12" cy="12" r="1.3" fill="currentColor" /></svg>
+              {% elif 'post' in key %}
+              <svg viewBox="0 0 24 24" width="18" height="18"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2" /><path d="M3 9h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+              {% else %}
+              <svg viewBox="0 0 24 24" width="18" height="18"><path d="M3 17l6-6 4 4 8-9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              {% endif %}
+            {% endmacro %}
+
+            {% if featured %}
+            <div class="mk-stat-grid mk-stat-grid--featured">
+              {% for metric in featured %}
+              <div class="mk-stat-tile mk-stat-tile--featured">
+                <span class="mk-stat-tile__icon" aria-hidden="true">{{ stat_icon(metric.key) }}</span>
                 <strong data-counter data-value="{{ metric.value }}" data-display="{{ metric.display_value }}">
                   {{ metric.display_value }}
                 </strong>
@@ -129,6 +140,23 @@
               </div>
               {% endfor %}
             </div>
+            {% endif %}
+
+            {% if supporting %}
+            <p class="mk-stat-grid__divider">Outros indicadores</p>
+            <div class="mk-stat-grid mk-stat-grid--supporting">
+              {% for metric in supporting %}
+              <div class="mk-stat-tile">
+                <span class="mk-stat-tile__icon" aria-hidden="true">{{ stat_icon(metric.key) }}</span>
+                <strong data-counter data-value="{{ metric.value }}" data-display="{{ metric.display_value }}">
+                  {{ metric.display_value }}
+                </strong>
+                <span class="mk-stat-tile__label">{{ metric.label }}</span>
+                {% if metric.period %}<small>{{ metric.period }}</small>{% endif %}
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
 
             {% set groups = media.audience_groups %}
             {% if groups.gender or groups.age %}
@@ -452,7 +480,7 @@
 
     <section class="mk-contact" id="contato" aria-labelledby="contact-title">
       <div class="mk-container mk-contact__inner" data-reveal>
-        <p class="mk-kicker mk-kicker--light">Vamos conversar</p>
+        <p class="mk-kicker mk-kicker--light">Planejar uma campanha</p>
         <h2 id="contact-title">Vamos criar o<br><em>próximo capítulo?</em></h2>
         <p>
           Tem uma marca, produto ou experiência que combina com essa história?
@@ -460,7 +488,7 @@
         </p>
         <div class="mk-contact__actions">
           <a class="mk-button mk-button--light" href="mailto:{{ contact_email }}?subject={{ email_subject }}"
-            data-event="media_kit_email_click">Enviar proposta por e-mail <span aria-hidden="true">↗</span></a>
+            data-event="media_kit_email_click">Planejar uma campanha <span aria-hidden="true">↗</span></a>
           <button class="mk-copy-email" type="button" data-copy-email="{{ contact_email }}">
             <span>{{ contact_email }}</span>
             <small data-copy-label>copiar</small>

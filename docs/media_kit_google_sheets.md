@@ -22,17 +22,25 @@ rascunhos, preços ou dados que não possam aparecer publicamente.
 ### metricas
 
 ```csv
-key,value,display_value,label,period,updated_at,order,active
-followers,11400,"11,4 mil",seguidores,audiência atual,2026-09-01,1,TRUE
-views_90d,2700000,"2,7 milhões",visualizações,nos últimos 90 dias,2026-09-01,2,TRUE
-engagement_rate,3.8,"3,8%",taxa de engajamento,média dos últimos 30 dias,2026-09-01,3,TRUE
+key,value,display_value,label,period,updated_at,order,active,highlight
+followers,11300,"11,3 mil",seguidores,audiência atual · Instagram,2026-09-02,1,TRUE,TRUE
+views_30d,1308256,"1,3 milhão",visualizações,últimos 30 dias · Instagram,2026-09-02,2,TRUE,TRUE
+engagement_rate,7.74,"7,74%",taxa de engajamento,últimos 30 dias · Instagram,2026-09-02,3,TRUE,TRUE
+growth_rate,3.37,"3,37%",crescimento de seguidores,,2026-09-02,4,TRUE,FALSE
 ```
 
 Qualquer linha nova em `metricas` vira automaticamente um novo quadro na página —
 não precisa mexer em código. O ícone do quadro é escolhido pelo `key`: contém
 "follow" → pessoas, "view" → olho, "like" → coração, "comment" → balão de
-conversa, "post" → grade; qualquer outro nome (como `engagement_rate`) usa o
-ícone padrão de tendência.
+conversa, "engagement" → alvo, "post" → calendário; qualquer outro nome (como
+`growth_rate`) usa o ícone padrão de tendência.
+
+`highlight` marca uma métrica como principal — aparece em destaque, maior, no
+topo do quadro (recomendado: no máximo 3). Se nenhuma linha tiver `highlight`
+preenchido, as 3 primeiras por `order` viram destaque automaticamente. Sempre
+que possível, deixe o `period` explicar a janela de tempo e a plataforma (ex.:
+"últimos 30 dias · Instagram") — isso é o que transforma um número solto em
+argumento comercial.
 
 ### audiencia
 

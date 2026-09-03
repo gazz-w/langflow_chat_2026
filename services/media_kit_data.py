@@ -107,6 +107,7 @@ def _normalise_metric(row: dict) -> dict | None:
         "updated_at": updated_at,
         "updated_display": _updated_display(updated_at),
         "order": _order(row.get("order")),
+        "highlight": _active(row.get("highlight"), default=False),
     }
 
 
@@ -289,6 +290,11 @@ class MediaKitDataService:
                         logger.warning("Falha ao atualizar dados do Media Kit (%s): %s", section, exc)
 
             data.setdefault("metrics", [])
+            if data["metrics"] and not any(m.get("highlight") for m in data["metrics"]):
+                # Compatibilidade: planilhas/fallback sem a coluna "highlight"
+                # promovem as 3 primeiras métricas (por order) a destaque.
+                for metric in data["metrics"][:3]:
+                    metric["highlight"] = True
             data.setdefault("audience", [])
             data.setdefault("content", [])
             data.setdefault("quotes", [])

@@ -5,30 +5,33 @@
       "value": 11300,
       "display_value": "11,3 mil",
       "label": "seguidores",
-      "period": "audiência atual",
+      "period": "audiência atual · Instagram",
       "updated_at": "2026-09-02",
       "updated_display": "setembro de 2026",
-      "order": 1
+      "order": 1,
+      "highlight": true
     },
     {
       "key": "views_30d",
       "value": 1308256,
       "display_value": "1,3 milhão",
       "label": "visualizações",
-      "period": "nos últimos 30 dias",
+      "period": "últimos 30 dias · Instagram",
       "updated_at": "2026-09-02",
       "updated_display": "setembro de 2026",
-      "order": 2
+      "order": 2,
+      "highlight": true
     },
     {
       "key": "engagement_rate",
       "value": 7.74,
       "display_value": "7,74%",
       "label": "taxa de engajamento",
-      "period": "",
+      "period": "últimos 30 dias · Instagram",
       "updated_at": "2026-09-02",
       "updated_display": "setembro de 2026",
-      "order": 3
+      "order": 3,
+      "highlight": true
     },
     {
       "key": "growth_rate",
