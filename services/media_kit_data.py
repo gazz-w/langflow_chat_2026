@@ -94,7 +94,7 @@ def _updated_display(value: str) -> str:
 def _normalise_metric(row: dict) -> dict | None:
     value = _number(row.get("value"))
     key = _text(row.get("key"), 60)
-    if not key or value is None or not _active(row.get("active")):
+    if not key or value is None or not _active(row.get("active"), default=False):
         return None
     updated_at = _text(row.get("updated_at"), 20)
     return {
@@ -118,7 +118,7 @@ def _normalise_audience(row: dict) -> dict | None:
         dimension not in {"gender", "age", "country"}
         or value is None
         or value < 0
-        or not _active(row.get("active"))
+        or not _active(row.get("active"), default=False)
     ):
         return None
     value = min(value, 100)
@@ -136,7 +136,7 @@ def _normalise_audience(row: dict) -> dict | None:
 def _normalise_content(row: dict) -> dict | None:
     title = _text(row.get("title"), 120)
     category = _text(row.get("category"), 20).lower()
-    if not title or not _active(row.get("active")):
+    if not title or not _active(row.get("active"), default=False):
         return None
     if category not in {"conexao", "alcance", "ambos"}:
         category = "conexao"
@@ -166,7 +166,7 @@ def _normalise_content(row: dict) -> dict | None:
 
 def _normalise_quote(row: dict) -> dict | None:
     quote = _text(row.get("quote"), 420)
-    if not quote or not _active(row.get("active")):
+    if not quote or not _active(row.get("active"), default=False):
         return None
     context = _text(row.get("context"), 30).lower()
     if context not in {"identificacao", "inspiracao", "confianca", "decisao"}:
@@ -183,7 +183,7 @@ def _normalise_quote(row: dict) -> dict | None:
 def _normalise_testimonial(row: dict) -> dict | None:
     quote = _text(row.get("quote"), 500)
     author = _text(row.get("author"), 100)
-    if not quote or not author or not _active(row.get("active")):
+    if not quote or not author or not _active(row.get("active"), default=False):
         return None
     return {
         "quote": quote,
@@ -199,7 +199,7 @@ def _normalise_testimonial(row: dict) -> dict | None:
 def _normalise_case(row: dict) -> dict | None:
     partner = _text(row.get("partner"), 80)
     story = _text(row.get("story"), 600)
-    if not partner or not story or not _active(row.get("active")):
+    if not partner or not story or not _active(row.get("active"), default=False):
         return None
     result_1 = _text(row.get("result_1_value"), 24)
     result_2 = _text(row.get("result_2_value"), 24)

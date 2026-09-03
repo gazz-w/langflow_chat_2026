@@ -131,7 +131,9 @@ minutos.
 
 ## 5. Regras editoriais
 
-- use `active=TRUE` para exibir e `active=FALSE` para ocultar;
+- use `active=TRUE` para exibir; **qualquer outra coisa (inclusive célula
+  vazia) oculta a linha** — é isso que impede que uma anotação escrita no
+  rodapé da guia vire conteúdo publicado por engano;
 - use `order` para controlar a ordem dos itens;
 - deixe uma métrica vazia em vez de preencher com zero quando ela não existir;
 - informe sempre o período de cada indicador;

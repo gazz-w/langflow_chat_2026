@@ -79,6 +79,39 @@ class MediaKitDataServiceTest(unittest.TestCase):
             "MEDIA_KIT_METRICS_CSV_URL": "",
             "MEDIA_KIT_AUDIENCE_CSV_URL": "",
             "MEDIA_KIT_CONTENT_CSV_URL": "",
+            "MEDIA_KIT_QUOTES_CSV_URL": "https://example.com/quotes.csv",
+            "MEDIA_KIT_TESTIMONIALS_CSV_URL": "",
+            "MEDIA_KIT_CASES_CSV_URL": "",
+        },
+        clear=False,
+    )
+    def test_ignores_rows_without_explicit_active(self):
+        """Notas de rodapé da planilha não podem virar conteúdo publicado.
+
+        As guias têm uma linha de instrução no fim (texto na 1ª coluna e
+        `active` vazio). Com `active` vazio valendo "ativo", essa nota foi
+        parar no ar como se fosse depoimento de seguidora.
+        """
+        service = MediaKitDataService()
+        rows = [
+            {"quote": "Depoimento de verdade.", "author_display": "Seguidora",
+             "context": "confianca", "order": "1", "active": "TRUE"},
+            {"quote": "context aceita: identificacao, inspiracao, confianca...",
+             "author_display": "", "context": "", "order": "", "active": ""},
+        ]
+
+        with patch.object(service, "_rows", return_value=rows):
+            data = service.get()
+
+        self.assertEqual(len(data["quotes"]), 1)
+        self.assertEqual(data["quotes"][0]["quote"], "Depoimento de verdade.")
+
+    @patch.dict(
+        os.environ,
+        {
+            "MEDIA_KIT_METRICS_CSV_URL": "",
+            "MEDIA_KIT_AUDIENCE_CSV_URL": "",
+            "MEDIA_KIT_CONTENT_CSV_URL": "",
             "MEDIA_KIT_QUOTES_CSV_URL": "",
             "MEDIA_KIT_TESTIMONIALS_CSV_URL": "",
         },
