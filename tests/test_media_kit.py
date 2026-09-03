@@ -16,8 +16,8 @@ class MediaKitRouteTest(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("text/html", response.content_type)
-        self.assertIn("11,4 mil", response.get_data(as_text=True))
-        self.assertIn("2,7 milhões", response.get_data(as_text=True))
+        self.assertIn("11,3 mil", response.get_data(as_text=True))
+        self.assertIn("7,74%", response.get_data(as_text=True))
 
     def test_media_kit_is_isolated_from_chat_assets(self):
         body = self.client.get("/media-kit").get_data(as_text=True)
@@ -80,8 +80,8 @@ class MediaKitDataServiceTest(unittest.TestCase):
     def test_uses_local_fallback_without_sheet_urls(self):
         data = MediaKitDataService().get()
 
-        self.assertEqual(data["metrics"][0]["display_value"], "11,4 mil")
-        self.assertEqual(data["metrics"][1]["display_value"], "2,7 milhões")
+        self.assertEqual(data["metrics"][0]["display_value"], "11,3 mil")
+        self.assertEqual(data["metrics"][1]["display_value"], "1,3 milhão")
 
 
 if __name__ == "__main__":
