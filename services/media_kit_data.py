@@ -195,6 +195,29 @@ def _normalise_testimonial(row: dict) -> dict | None:
     }
 
 
+_CHART_COLORS = ("var(--mk-coral)", "var(--mk-cobalt)", "var(--mk-lime)", "var(--mk-coral-dark)")
+
+
+def _apply_swatches(items: list) -> None:
+    """Atribui uma cor da paleta a cada item (usada no gráfico e na legenda)."""
+    for index, item in enumerate(items):
+        item["swatch"] = _CHART_COLORS[index % len(_CHART_COLORS)]
+
+
+def _donut_gradient(items: list) -> str:
+    """Monta um conic-gradient CSS a partir dos valores já com swatch atribuído."""
+    total = sum(item.get("value") or 0 for item in items)
+    if not items or total <= 0:
+        return ""
+    stops, acc = [], 0.0
+    for item in items:
+        start = acc / total * 100
+        acc += item.get("value") or 0
+        end = acc / total * 100
+        stops.append(f"{item['swatch']} {start:.2f}% {end:.2f}%")
+    return "conic-gradient(" + ", ".join(stops) + ")"
+
+
 _NORMALISERS = {
     "metrics": _normalise_metric,
     "audience": _normalise_audience,
@@ -277,6 +300,9 @@ class MediaKitDataService:
                 ]
                 for dimension in ("gender", "age", "country")
             }
+            _apply_swatches(data["audience_groups"]["gender"])
+            _apply_swatches(data["audience_groups"]["age"])
+            data["gender_donut"] = _donut_gradient(data["audience_groups"]["gender"])
             valid_dates = [
                 item.get("updated_display") for item in data["metrics"]
                 if item.get("updated_display")

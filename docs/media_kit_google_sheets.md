@@ -25,7 +25,14 @@ rascunhos, preços ou dados que não possam aparecer publicamente.
 key,value,display_value,label,period,updated_at,order,active
 followers,11400,"11,4 mil",seguidores,audiência atual,2026-09-01,1,TRUE
 views_90d,2700000,"2,7 milhões",visualizações,nos últimos 90 dias,2026-09-01,2,TRUE
+engagement_rate,3.8,"3,8%",taxa de engajamento,média dos últimos 30 dias,2026-09-01,3,TRUE
 ```
+
+Qualquer linha nova em `metricas` vira automaticamente um novo quadro na página —
+não precisa mexer em código. O ícone do quadro é escolhido pelo `key`: contém
+"follow" → pessoas, "view" → olho, "like" → coração, "comment" → balão de
+conversa, "post" → grade; qualquer outro nome (como `engagement_rate`) usa o
+ícone padrão de tendência.
 
 ### audiencia
 

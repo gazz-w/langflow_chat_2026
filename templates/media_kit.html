@@ -129,6 +129,41 @@
               </div>
               {% endfor %}
             </div>
+
+            {% set groups = media.audience_groups %}
+            {% if groups.gender or groups.age %}
+            <div class="mk-mini-charts">
+              {% if groups.gender %}
+              <div class="mk-mini-chart">
+                <h3>Gênero</h3>
+                <div class="mk-donut-row">
+                  <div class="mk-donut" style="--donut-gradient: {{ media.gender_donut }}" role="img"
+                    aria-label="Distribuição por gênero: {% for item in groups.gender %}{{ item.label }} {{ item.display_value }}{{ ", " if not loop.last }}{% endfor %}">
+                    <span class="mk-donut__hole"></span>
+                  </div>
+                  <ul class="mk-donut-legend">
+                    {% for item in groups.gender %}
+                    <li><span class="mk-legend-dot" style="background: {{ item.swatch }}" aria-hidden="true"></span>{{ item.label }} <strong>{{ item.display_value }}</strong></li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              </div>
+              {% endif %}
+              {% if groups.age %}
+              <div class="mk-mini-chart">
+                <h3>Faixa etária</h3>
+                <div class="mk-mini-bars">
+                  {% for item in groups.age %}
+                  <div class="mk-mini-bar">
+                    <div class="mk-mini-bar__label"><span>{{ item.label }}</span><strong>{{ item.display_value }}</strong></div>
+                    <div class="mk-mini-bar__track"><span style="width: {{ item.bar_value }}%; background: {{ item.swatch }}"></span></div>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+              {% endif %}
+            </div>
+            {% endif %}
           </article>
           {% endif %}
         </div>
