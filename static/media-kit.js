@@ -13,6 +13,51 @@
   setHeaderState();
   window.addEventListener("scroll", setHeaderState, { passive: true });
 
+  // Rolagem de âncoras com duração fixa (não proporcional à distância):
+  // o smooth-scroll nativo do navegador pode levar vários segundos numa
+  // página longa. html.mk-js desliga o CSS smooth-scroll (ver media-kit.css)
+  // e este handler assume, com o mesmo tempo pra pertinho ou pra longe.
+  const SCROLL_DURATION_MS = 420;
+
+  const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+  const scrollToTarget = (target) => {
+    const headerOffset = header ? header.offsetHeight + 16 : 86;
+    const startY = window.scrollY;
+    const targetY = Math.max(
+      0,
+      target.getBoundingClientRect().top + startY - headerOffset
+    );
+    const distance = targetY - startY;
+
+    if (reducedMotion.matches || Math.abs(distance) < 2) {
+      window.scrollTo(0, targetY);
+      return;
+    }
+
+    const start = performance.now();
+    const frame = (now) => {
+      const progress = Math.min(1, (now - start) / SCROLL_DURATION_MS);
+      window.scrollTo(0, startY + distance * easeInOutCubic(progress));
+      if (progress < 1) requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  };
+
+  document.querySelectorAll('a[href^="#"]').forEach((link) => {
+    const hash = link.getAttribute("href");
+    if (!hash || hash.length < 2) return; // ignora href="#" puro
+    link.addEventListener("click", (event) => {
+      const target = document.querySelector(hash);
+      if (!target) return;
+      event.preventDefault();
+      scrollToTarget(target);
+      history.pushState(null, "", hash);
+      target.setAttribute("tabindex", "-1");
+      target.focus({ preventScroll: true });
+    });
+  });
+
   const closeMenu = (returnFocus = false) => {
     if (!menuButton || !nav || !header) return;
     menuButton.setAttribute("aria-expanded", "false");

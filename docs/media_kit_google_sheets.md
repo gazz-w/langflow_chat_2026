@@ -25,9 +25,10 @@ rascunhos, preços ou dados que não possam aparecer publicamente.
 ```csv
 key,value,display_value,label,period,updated_at,order,active,highlight
 followers,11300,"11,3 mil",seguidores,audiência atual · Instagram,2026-09-02,1,TRUE,TRUE
-views_30d,1308256,"1,3 milhão",visualizações,últimos 30 dias · Instagram,2026-09-02,2,TRUE,TRUE
+views_30d,1308256,"1,3 milhão",visualizações totais,todos os formatos · últimos 30 dias · Instagram,2026-09-02,2,TRUE,TRUE
 engagement_rate,7.74,"7,74%",taxa de engajamento,últimos 30 dias · Instagram,2026-09-02,3,TRUE,TRUE
-growth_rate,3.37,"3,37%",crescimento de seguidores,,2026-09-02,4,TRUE,FALSE
+avg_views,76000,"76 mil",média de visualizações,13 Reels · últimos 30 dias,2026-09-03,4,TRUE,FALSE
+growth_rate,3.37,"3,37%",crescimento de seguidores,,2026-09-02,5,TRUE,FALSE
 ```
 
 Qualquer linha nova em `metricas` vira automaticamente um novo quadro na página —
@@ -35,6 +36,13 @@ não precisa mexer em código. O ícone do quadro é escolhido pelo `key`: cont�
 "follow" → pessoas, "view" → olho, "like" → coração, "comment" → balão de
 conversa, "engagement" → alvo, "post" → calendário; qualquer outro nome (como
 `growth_rate`) usa o ícone padrão de tendência.
+
+Cuidado especial com métricas de "visualizações": se a página mostrar mais de
+uma (ex.: total do período e média por post), o `label` e o `period` de cada
+uma precisam deixar claro o que está sendo contado — total vs. média, quais
+formatos entram (Reels, Stories, feed), quantos posts compõem a média. Sem
+isso, os dois números parecem contraditórios para quem não conhece o
+Instagram Insights por dentro.
 
 `highlight` marca uma métrica como principal — aparece em destaque, maior, no
 topo do quadro (recomendado: no máximo 3). Se nenhuma linha tiver `highlight`

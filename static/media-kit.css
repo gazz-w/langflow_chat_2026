@@ -24,6 +24,13 @@ html {
   scroll-padding-top: 86px;
 }
 
+/* Com JS, a rolagem de âncoras é controlada por script (duração fixa,
+   independente da distância) — evita o smooth-scroll nativo do navegador
+   demorar segundos em páginas longas. Ver media-kit.js. */
+html.mk-js {
+  scroll-behavior: auto;
+}
+
 body.media-kit-page {
   margin: 0;
   overflow-x: hidden;
@@ -689,9 +696,9 @@ body.media-kit-page {
 .mk-footer__inner > small { grid-column: 1 / -1; padding-top: 28px; color: rgba(255,253,249,.38); border-top: 1px solid rgba(255,255,255,.12); font-size: 10px; }
 
 /* A página continua visível sem JavaScript. Os estados abaixo são progressivos. */
-.mk-js [data-reveal] { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s cubic-bezier(.22, 1, .36, 1); }
-.mk-js [data-reveal][data-reveal-delay="1"] { transition-delay: .1s; }
-.mk-js [data-reveal][data-reveal-delay="2"] { transition-delay: .2s; }
+.mk-js [data-reveal] { opacity: 0; transform: translateY(14px); transition: opacity .45s ease, transform .45s cubic-bezier(.22, 1, .36, 1); }
+.mk-js [data-reveal][data-reveal-delay="1"] { transition-delay: .07s; }
+.mk-js [data-reveal][data-reveal-delay="2"] { transition-delay: .14s; }
 .mk-js [data-reveal].is-visible { opacity: 1; transform: translateY(0); }
 
 @media (max-width: 1023px) {
