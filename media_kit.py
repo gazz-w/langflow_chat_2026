@@ -15,7 +15,7 @@ media_kit_bp = Blueprint("media_kit", __name__)
 def media_kit():
     data = media_kit_data.get(current_app.logger)
     email = os.environ.get(
-        "MEDIA_KIT_CONTACT_EMAIL", "gabrielshimabuko01@gmail.com"
+        "MEDIA_KIT_CONTACT_EMAIL", "anandamacieel@gmail.com"
     ).strip()
     instagram_url = os.environ.get("MEDIA_KIT_INSTAGRAM_URL", "").strip()
     subject = quote("Proposta de parceria — Viajando com Ananda")
