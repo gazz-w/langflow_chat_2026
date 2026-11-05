@@ -70,6 +70,9 @@ services:
     env_file: .env
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
+      # Certificado de Origem da Cloudflare (admin.* e langflow.*). A chave
+      # privada vive só no servidor (certs/ está no .gitignore).
+      - ./certs:/certs:ro
       - caddy_data:/data
       - caddy_config:/config
     restart: unless-stopped

@@ -25,7 +25,11 @@ viajandocomananda.com, www.viajandocomananda.com {
 # Autenticação na borda: Cloudflare Access (SSO + OTP). Na origem exigimos o
 # "segredo de origem" que a Cloudflare injeta (header X-Origin-Secret): quem o
 # traz é proxiado; acesso direto ao IP sem o segredo é bloqueado com 403.
+# TLS: Certificado de Origem da Cloudflare (válido até 2041). Atrás do proxy +
+# Access o Let's Encrypt não consegue validar (HTTP-01 cai no login do Access e
+# TLS-ALPN não passa pelo proxy), então a emissão automática nunca funciona aqui.
 admin.viajandocomananda.com {
+	tls /certs/origin.crt /certs/origin.key
 	import secure_headers
 	@hassecret header X-Origin-Secret {$ORIGIN_SHARED_SECRET}
 	handle @hassecret {
@@ -39,6 +43,7 @@ admin.viajandocomananda.com {
 
 # UI do Langflow (gestão do fluxo). Mesmo esquema do painel admin.
 langflow.viajandocomananda.com {
+	tls /certs/origin.crt /certs/origin.key
 	import secure_headers
 	@hassecret header X-Origin-Secret {$ORIGIN_SHARED_SECRET}
 	handle @hassecret {

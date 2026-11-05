@@ -6,4 +6,5 @@ venv/
 .venv/
 .DS_Store
 docs/uploads/
+certs/
 
